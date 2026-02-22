@@ -1,0 +1,1563 @@
+<!doctype html>
+<html lang="th" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบเช็คสต็อกก๋วยเตี๋ยวเรือ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    body { box-sizing: border-box; }
+    * { font-family: 'Sarabun', sans-serif; }
+    input[type="number"]::-webkit-inner-spin-button,
+    input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type="number"] { -moz-appearance: textfield; }
+    .fade-in { animation: fadeIn 0.3s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .slide-in { animation: slideIn 0.3s ease-out; }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+    .lang-btn{
+      width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:8px;
+      font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s;border:2px solid transparent;
+    }
+    .lang-btn.active{ background-color:#ea580c;color:white;border-color:#ea580c; }
+    .lang-btn:not(.active){ background-color:white;color:#ea580c;border-color:#f3f4f6; }
+    .lang-selector{ display:flex;gap:4px;padding:6px;background:white;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+    .trend-up{ color:#ef4444; } .trend-down{ color:#22c55e; } .trend-neutral{ color:#6b7280; }
+    .qty-invalid{ border-color:#ef4444 !important; background: #fff1f2; }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+</head>
+
+<body class="h-full bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
+  <div id="app" class="h-full w-full overflow-auto">
+    <!-- Language Selector -->
+    <div class="fixed top-4 right-4 z-50 lang-selector">
+      <button onclick="setLanguage('th')" class="lang-btn active" id="btn-th" title="ไทย">ไทย</button>
+      <button onclick="setLanguage('lo')" class="lang-btn" id="btn-lo" title="ລາວ">ລາວ</button>
+      <button onclick="setLanguage('my')" class="lang-btn" id="btn-my" title="မြန်မာ">မြန်</button>
+    </div>
+
+    <!-- หน้าหลัก -->
+    <div id="home-page" class="min-h-full p-4 md:p-6 pt-20">
+      <div class="max-w-lg mx-auto">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-8">
+          <div>
+            <h1 id="shop-title" class="text-2xl md:text-3xl font-bold text-orange-800">🍜 ก๋วยเตี๋ยวเรือรสจนา</h1>
+            <p id="txt-daily-check" class="text-orange-600 text-sm mt-1">เช็คสต็อกประจำวัน</p>
+          </div>
+          <button onclick="showHistory()" class="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-md hover:shadow-lg transition-all text-orange-700 font-medium">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span id="txt-history">ประวัติ</span>
+          </button>
+        </div>
+
+        <!-- วันที่ -->
+        <div class="bg-white rounded-2xl p-4 shadow-md mb-6">
+          <p id="txt-date2" class="text-gray-500 text-sm">วันที่</p>
+          <p id="current-date" class="text-lg font-semibold text-gray-800"></p>
+        </div>
+
+        <!-- ปุ่มเลือกหมวดหมู่ -->
+        <div class="space-y-4">
+          <button onclick="selectCategory('หน้าเรือ')" class="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white p-5 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02] active:scale-[0.98]">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center text-3xl">🚣</div>
+              <div class="text-left">
+                <p id="cat-boat" class="text-xl font-bold">หน้าเรือ</p>
+                <p id="cat-boat-desc" class="text-orange-100 text-sm">เช็คสต็อกวัตถุดิบหน้าเรือ</p>
+              </div>
+              <svg class="w-6 h-6 ml-auto" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </button>
+
+          <button onclick="selectCategory('อาหารตามสั่ง')" class="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white p-5 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02] active:scale-[0.98]">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center text-3xl">🍳</div>
+              <div class="text-left">
+                <p id="cat-food" class="text-xl font-bold">อาหารตามสั่ง</p>
+                <p id="cat-food-desc" class="text-emerald-100 text-sm">เช็คสต็อกวัตถุดิบอาหารตามสั่ง</p>
+              </div>
+              <svg class="w-6 h-6 ml-auto" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </button>
+
+          <button onclick="selectCategory('เด็กเสิร์ฟ')" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white p-5 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02] active:scale-[0.98]">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center text-3xl">🧑‍🍳</div>
+              <div class="text-left">
+                <p id="cat-staff" class="text-xl font-bold">เด็กเสิร์ฟ</p>
+                <p id="cat-staff-desc" class="text-blue-100 text-sm">เช็คสต็อกอุปกรณ์เด็กเสิร์ฟ</p>
+              </div>
+              <svg class="w-6 h-6 ml-auto" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- หน้ากรอกชื่อ -->
+    <div id="name-page" class="min-h-full p-4 md:p-6 hidden">
+      <div class="max-w-lg mx-auto fade-in">
+        <button onclick="goHome()" class="flex items-center gap-2 text-orange-700 mb-6 hover:text-orange-800 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          <span id="txt-back-home">กลับหน้าหลัก</span>
+        </button>
+
+        <div class="bg-white rounded-2xl p-6 shadow-lg">
+          <div id="category-badge" class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-white text-sm font-medium mb-4"></div>
+          <h2 id="txt-staff-name-title" class="text-xl font-bold text-gray-800 mb-2">ผู้เช็คสต็อก</h2>
+          <p id="txt-staff-name-desc" class="text-gray-500 mb-6">กรุณากรอกชื่อผู้ทำการเช็คสต็อก</p>
+          <div class="space-y-4">
+            <div>
+              <label id="txt-full-name-label" class="block text-sm font-medium text-gray-700 mb-2">ชื่อ-นามสกุล</label>
+              <input type="text" id="checker-name" placeholder="กรอกชื่อของคุณ" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none transition-colors text-lg">
+            </div>
+            <button onclick="startChecking()" id="btn-start-checking" class="w-full bg-orange-500 text-white py-4 rounded-xl font-semibold text-lg hover:bg-orange-600 transition-colors shadow-md hover:shadow-lg">เริ่มเช็คสต็อก</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- หน้าเช็คสต็อก -->
+    <div id="stock-page" class="min-h-full p-4 md:p-6 hidden">
+      <div class="max-w-2xl mx-auto fade-in">
+        <div class="flex items-center justify-between mb-6">
+          <button onclick="goToNamePage()" class="flex items-center gap-2 text-orange-700 hover:text-orange-800 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            <span id="txt-back">กลับ</span>
+          </button>
+          <div id="stock-category-badge" class="px-4 py-2 rounded-full text-white text-sm font-medium"></div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div class="bg-gradient-to-r from-orange-500 to-orange-600 p-4 text-white">
+            <p class="text-sm opacity-90"><span id="txt-staff-checker">ผู้เช็คสต็อก:</span> <span id="display-checker-name" class="font-semibold"></span></p>
+            <p class="text-sm opacity-90"><span id="txt-date-label">วันที่:</span> <span id="display-date" class="font-semibold"></span></p>
+          </div>
+
+          <!-- ตารางสต็อก -->
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th id="txt-item" class="px-4 py-3 text-left text-sm font-semibold text-gray-700">รายการ</th>
+                  <th id="txt-quantity" class="px-4 py-3 text-center text-sm font-semibold text-gray-700 w-28">จำนวน</th>
+                  <th id="txt-unit" class="px-4 py-3 text-center text-sm font-semibold text-gray-700 w-20">หน่วย</th>
+                  <th id="txt-note" class="px-4 py-3 text-left text-sm font-semibold text-gray-700">หมายเหตุ</th>
+                </tr>
+              </thead>
+              <tbody id="stock-table-body" class="divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
+
+          <div class="p-4 bg-gray-50">
+            <button id="save-btn" onclick="saveStock()" class="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-4 rounded-xl font-semibold text-lg hover:from-green-600 hover:to-green-700 transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              <span id="txt-save">บันทึกข้อมูล</span>
+            </button>
+            <p class="text-xs text-gray-500 mt-2">
+              * ช่อง “จำนวน” ใส่ได้เฉพาะ 0-9 และสัญลักษณ์ . / + -
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- หน้าประวัติ -->
+    <div id="history-page" class="min-h-full p-4 md:p-6 hidden">
+      <div class="max-w-2xl mx-auto fade-in">
+        <button onclick="goHome()" class="flex items-center gap-2 text-orange-700 mb-6 hover:text-orange-800 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          <span id="txt-back-home2">กลับหน้าหลัก</span>
+        </button>
+
+        <h2 id="txt-history-title" class="text-2xl font-bold text-gray-800 mb-4">📋 ประวัติการเช็คสต็อก</h2>
+
+        <!-- ตัวกรอง -->
+        <div class="bg-white rounded-2xl p-4 shadow-md mb-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label id="txt-select-date" class="block text-sm font-medium text-gray-700 mb-2">เลือกวันที่</label>
+              <input type="date" id="filter-date" onchange="filterHistory()" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none transition-colors">
+            </div>
+            <div>
+              <label id="txt-category-label" class="block text-sm font-medium text-gray-700 mb-2">หมวดหมู่</label>
+              <select id="filter-category" onchange="filterHistory()" class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-orange-500 focus:outline-none transition-colors">
+                <option value="" id="opt-all">ทั้งหมด</option>
+                <option value="หน้าเรือ">หน้าเรือ</option>
+                <option value="อาหารตามสั่ง">อาหารตามสั่ง</option>
+                <option value="เด็กเสิร์ฟ">เด็กเสิร์ฟ</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- รายการประวัติ -->
+        <div id="history-list" class="space-y-4"></div>
+        <div id="no-history" class="hidden text-center py-12">
+          <div class="text-6xl mb-4">📭</div>
+          <p id="txt-no-history" class="text-gray-500">ไม่พบประวัติการเช็คสต็อก</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- หน้ารายละเอียดประวัติ -->
+    <div id="history-detail-page" class="min-h-full p-4 md:p-6 hidden">
+      <div class="max-w-2xl mx-auto fade-in">
+        <button onclick="showHistory()" class="flex items-center gap-2 text-orange-700 mb-6 hover:text-orange-800 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          <span id="txt-back-history">กลับหน้าประวัติ</span>
+        </button>
+        <div id="history-detail-content" class="bg-white rounded-2xl shadow-lg overflow-hidden"></div>
+      </div>
+    </div>
+
+    <!-- Toast notification -->
+    <div id="toast" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-xl shadow-lg hidden transition-all duration-300 flex items-center gap-2">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+      </svg>
+      <span id="toast-message">บันทึกสำเร็จ!</span>
+    </div>
+  </div>
+
+  <script>
+    // =========================
+    // ✅ ตั้งค่า Google Sheet (Apps Script Web App)
+    // =========================
+    // 1) สร้าง Google Apps Script เป็น Web App แล้วใส่ URL ลงด้านล่าง
+    // 2) ให้ Web App รองรับ:
+    //    - POST: รับ record JSON แล้ว append ลง Sheet
+    //    - GET : คืน records ทั้งหมด (หรือช่วงล่าสุด) เพื่อทำ real-time history
+    //
+    // ตัวอย่าง payload ที่ส่งไป: { action:"append", record:{...} }
+    //
+    const GOOGLE_SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxcyVjugKR0hKo9wQCxGF-FbZJj84G-m1wEDfCnmMIE8qBINkLqZlXtLmgG-wJCfhWj2w/exec";
+    const SHEET_POLL_MS = 10000; // 10 วินาที
+
+    // ภาษาเนื้อหา
+    let currentLanguage = 'th';
+
+    const translations = {
+      th: {
+        stockCheck: 'ระบบเช็คสต็อก',
+        dailyCheck: 'เช็คสต็อกประจำวัน',
+        history: 'ประวัติ',
+        boatFront: 'หน้าเรือ',
+        boatFrontDesc: 'เช็คสต็อกวัตถุดิบหน้าเรือ',
+        customFood: 'อาหารตามสั่ง',
+        customFoodDesc: 'เช็คสต็อกวัตถุดิบอาหารตามสั่ง',
+        staffChild: 'เด็กเสิร์ฟ',
+        staffChildDesc: 'เช็คสต็อกอุปกรณ์เด็กเสิร์ฟ',
+        backHome: 'กลับหน้าหลัก',
+        staffName: 'ผู้เช็คสต็อก',
+        enterName: 'กรุณากรอกชื่อผู้ทำการเช็คสต็อก',
+        fullName: 'ชื่อ-นามสกุล',
+        startChecking: 'เริ่มเช็คสต็อก',
+        item: 'รายการ',
+        quantity: 'จำนวน',
+        unit: 'หน่วย',
+        note: 'หมายเหตุ',
+        save: 'บันทึกข้อมูล',
+        historyTitle: 'ประวัติการเช็คสต็อก',
+        selectDate: 'เลือกวันที่',
+        category: 'หมวดหมู่',
+        all: 'ทั้งหมด',
+        staffChecker: 'ผู้เช็คสต็อก:',
+        date: 'วันที่:',
+        noHistory: 'ไม่พบประวัติการเช็คสต็อก',
+        saved: 'บันทึกข้อมูลสำเร็จ!',
+        error: 'เกิดข้อผิดพลาด กรุณาลองใหม่',
+        fullLimit: 'ไม่สามารถบันทึกได้ ข้อมูลเต็มแล้ว (สูงสุด 999 รายการ)',
+        enterName2: 'กรุณากรอกชื่อ',
+        date2: 'วันที่',
+        back: 'กลับ',
+        backHistory: 'กลับหน้าประวัติ',
+        compared: 'เปรียบเทียบกับ',
+        increased: 'เพิ่มขึ้น',
+        decreased: 'ลดลง',
+        noChange: 'ไม่เปลี่ยนแปลง',
+      changeLabel: 'เปลี่ยนแปลง',
+      changePctLabel: 'เทียบเป็น %',
+        noPrevious: 'ไม่มีรอบก่อนหน้า',
+        invalidQty: 'รูปแบบจำนวนไม่ถูกต้อง (ตัวอย่าง: 10, 10.5, -2, 1/2)'
+      },
+      lo: {
+        stockCheck: 'ລະບົບກວດສອບສະ ໝາດ',
+        dailyCheck: 'ກວດສອບສະ ໝາດປະຈໍາວັນ',
+        history: 'ປະຫວັດ',
+        boatFront: 'ດ້ານໜ້າຂອງເຮືອ',
+        boatFrontDesc: 'ກວດສອບວັດຖຸດິບທີ່ຫາກໍາຫນົດໄວ້ໃນດ້ານໜ້າເຮືອ',
+        customFood: 'ອາຫານທີ່ສັ່ງຂໍ',
+        customFoodDesc: 'ກວດສອບວັດຖຸດິບສໍາລັບອາຫານທີ່ສັ່ງຂໍ',
+        staffChild: 'ເດັກໃຊ້ບໍລິການ',
+        staffChildDesc: 'ກວດສອບອຸປະກອນຂອງເດັກໃຊ້ບໍລິການ',
+        backHome: 'ກັບຫນ້າຫຼັກ',
+        staffName: 'ຜູ້ກວດສອບສະ ໝາດ',
+        enterName: 'ກະລຸນາໃສ່ຊື່ຂອງຜູ້ກວດສອບສະ ໝາດ',
+        fullName: 'ຊື່ແລະສະ ໝາຸນ',
+        startChecking: 'ເລີ່ມກວດສອບສະ ໝາດ',
+        item: 'ລາຍການ',
+        quantity: 'ຈໍານວນ',
+        unit: 'ຫົວໜ່ວຍ',
+        note: 'ຫມາຍເຫດ',
+        save: 'ບັນທຶກຂໍ້ມູນ',
+        historyTitle: 'ປະຫວັດການກວດສອບສະ ໝາດ',
+        selectDate: 'ເລືອກວັນທີ່',
+        category: 'ໝວດໝູ່',
+        all: 'ທັງໝົດ',
+        staffChecker: 'ຜູ້ກວດສອບສະ ໝາດ:',
+        date: 'ວັນທີ່:',
+        noHistory: 'ບໍ່ພົບປະຫວັດການກວດສອບສະ ໝາດ',
+        saved: 'ບັນທຶກຂໍ້ມູນສໍາເລັດ!',
+        error: 'ເກີດຂໍ້ຜິດພາດ ກະລຸນາລອງໃໝ່',
+        fullLimit: 'ບໍ່ສາມາດບັນທຶກໄດ້ ຂໍ້ມູນເຕັມແລ້ວ (ສູງສຸດ 999 ລາຍການ)',
+        enterName2: 'ກະລຸນາໃສ່ຊື່',
+        date2: 'ວັນທີ່',
+        back: 'ກັບ',
+        backHistory: 'ກັບຫນ້າປະຫວັດ',
+        compared: 'ຕຽບທຽບກັບ',
+        increased: 'ເພີ່ມຂຶ້ນ',
+        decreased: 'ຫຼຸດລົງ',
+        noChange: 'ບໍ່ມີການປ່ຽນແປງ',
+      changeLabel: 'ປ່ຽນແປງ',
+      changePctLabel: '%',
+        noPrevious: 'ບໍ່ມີຮອບກ່ອນໜ້າ',
+        invalidQty: 'ຮູບແບບຈໍານວນບໍ່ຖືກຕ້ອງ'
+      },
+      my: {
+        stockCheck: 'စတုံးတည်ဆောက်ခြင်းစနစ်',
+        dailyCheck: 'နေ့စဉ်စတုံးတည်ဆောက်ခြင်း',
+        history: 'ရာဇ၀တ်မှတ်တမ်း',
+        boatFront: 'လှေအရှေ့ဖက်',
+        boatFrontDesc: 'လှေအရှေ့ဖက်ရှိတင့သွင်းခဲ့သောပစ္စည်းများကိုစီစစ်ခြင်း',
+        customFood: 'အမှာစာအစားအသောက်',
+        customFoodDesc: 'အမှာစာအစားအသောက်နှင့်ဆိုင်ရာပစ္စည်းများကိုစီစစ်ခြင်း',
+        staffChild: 'ကလေးဘောင်များ',
+        staffChildDesc: 'ကလေးဘောင်များအတွက်ကိရိယာများကိုစီစစ်ခြင်း',
+        backHome: 'အဓိကစာမျက်နှာသို့ပြန်သွားခြင်း',
+        staffName: 'စီစစ်သူ',
+        enterName: 'စတုံးစီစစ်သူ၏အမည်ကိုထည့်သွင်းပါ',
+        fullName: 'အမည်-အကျအိုး',
+        startChecking: 'စတုံးစီစ့ခြင်းစတင်ခြင်း',
+        item: 'ပစ္စည်း',
+        quantity: 'အရေ့တွက်',
+        unit: 'ယူနစ်',
+        note: 'မှတ်ချက်',
+        save: 'မှတ်ချက်အလက်သိုးဆည်းခြင်း',
+        historyTitle: 'စတုံးစီစစ်မှုမှတ်တမ်း',
+        selectDate: 'ရက်စွဲရွေးချယ်ခြင်း',
+        category: 'အမျိုးအစား',
+        all: 'အားလုံး',
+        staffChecker: 'စီစစ်သူ:',
+        date: 'ရက်စွဲ:',
+        noHistory: 'စတုံးစီစစ်မှုမှတ်တမ်းမတည်ရှိ',
+        saved: 'အချက်အလက်သိမ်းဆည်းခြင်းအောင်မြင်သည်!',
+        error: 'အမှားအယွင်းတစ်ခုဖြစ်ပွားခဲ့သည် ထပ်မံကြိုးစားပါ',
+        fullLimit: 'သိမ့ုံးဆည်းမ့ အချက်အလက်ပြည့်သွာ့သည် (အများဆုံး ၉၉၉ ပစ္စည်း)',
+        enterName2: 'အမည်ထည့်သွင်းပါ',
+        date2: 'ရက်စွဲ',
+        back: 'ပြန်သွားခြင်း',
+        backHistory: 'ရာဇ၀တ်မှတ်တမ်းစာမျက်နှာသို့ပြန်သွားခြင်း',
+        compared: 'နှင့်နှိုင်းယှဉ်ခြင်း',
+        increased: 'တိုးမြင့်လာသည်',
+        decreased: 'လျော့ကျသည်',
+        noChange: 'ပြောင်းလဲမှုမရှိသည်',
+      changeLabel: 'ပြောင်းလဲမှု',
+      changePctLabel: '%',
+        noPrevious: 'အရှိုင်းရှိသည့်လည်အရှိုင်း',
+        invalidQty: 'ပမာဏပုံစံမမှန်ပါ'
+      }
+
+};
+
+// =========================
+// ✅ i18n dictionaries (prevent ReferenceError)
+// ถ้ายังไม่ได้ทำ mapping รายการ/หน่วย ให้เป็นวัตถุว่างไว้ก่อน
+// =========================
+const ITEM_I18N = (typeof window.ITEM_I18N === 'object' && window.ITEM_I18N) ? window.ITEM_I18N : {
+  lo: {},
+  my: {}
+};
+
+const UNIT_I18N = (typeof window.UNIT_I18N === 'object' && window.UNIT_I18N) ? window.UNIT_I18N : {
+  // key = หน่วยภาษาไทยใน stockItems
+  lo: {
+    "": "",
+    "ห่อ": "ຫໍ່",
+    "ก้อน": "ກ້ອນ",
+    "กิโลกรัม": "ກິໂລກຣາມ",
+    "กิโลกรัม/กรัม": "ກິໂລ/ກຣາມ",
+    "ขวด": "ຂວດ",
+    "ขวด/แพ็ค": "ຂວດ/ແພັກ",
+    "ขวด/ลัง": "ຂວດ/ລັງ",
+    "ถุง": "ຖົງ",
+    "ซอง": "ຊອງ",
+    "กล่อง": "ກ່ອງ",
+    "กระป๋อง": "ກະປ໋ອງ",
+    "กระปุก": "ກະປຸກ",
+    "ชิ้น": "ຊິ້ນ",
+    "คู่": "ຄູ່",
+    "ตัว": "ຕົວ",
+    "ถัง": "ຖັງ",
+    "ถ้วย": "ຖ້ວຍ",
+    "ฟอง": "ຟອງ",
+    "ม้วน": "ມ້ວນ",
+    "ลูก": "ລູກ",
+    "แพ็ค": "ແພັກ",
+    "แถว": "ແຖວ",
+    "โหล": "ໂຫຼ",
+    "ไม้": "ໄມ້",
+    "แกนลอน": "ແກນລອນ"
+  },
+  my: {
+    "": "",
+    "ห่อ": "ထုပ်",
+    "ก้อน": "တုံး",
+    "กิโลกรัม": "ကီလိုဂရမ်",
+    "กิโลกรัม/กรัม": "ကီလို/ဂရမ်",
+    "ขวด": "ပုလင်း",
+    "ขวด/แพ็ค": "ပုလင်း/ပက်",
+    "ขวด/ลัง": "ပုလင်း/လှောင်",
+    "ถุง": "အိတ်",
+    "ซอง": "ထုပ်",
+    "กล่อง": "သေတ္တာ",
+    "กระป๋อง": "တင်း",
+    "กระปุก": "ဘူး",
+    "ชิ้น": "ခု",
+    "คู่": "စုံ",
+    "ตัว": "လုံး",
+    "ถัง": "ပုံး",
+    "ถ้วย": "ခွက်",
+    "ฟอง": "လုံး",
+    "ม้วน": "လိပ်",
+    "ลูก": "လုံး",
+    "แพ็ค": "ပက်",
+    "แถว": "တန်း",
+    "โหล": "တစ်ဒါဇင်",
+    "ไม้": "ချောင်း",
+    "แกนลอน": "လိပ် (แกน)"
+  }
+};
+
+// --------- Fallback transliteration (กันกรณียังไม่ทำ dict รายการ) ----------
+const TH_TO_LAO_CHAR = {
+  "ก":"ກ","ข":"ຂ","ค":"ຄ","ฆ":"ຄ","ง":"ງ",
+  "จ":"ຈ","ฉ":"ຊ","ช":"ຊ","ซ":"ຊ","ฌ":"ຊ","ญ":"ຍ",
+  "ฎ":"ດ","ฏ":"ຕ","ฐ":"ທ","ฑ":"ທ","ฒ":"ທ","ณ":"ນ",
+  "ด":"ດ","ต":"ຕ","ถ":"ຖ","ท":"ທ","ธ":"ທ","น":"ນ",
+  "บ":"ບ","ป":"ປ","ผ":"ຜ","ฝ":"ຝ","พ":"ພ","ฟ":"ຟ","ภ":"ພ","ม":"ມ",
+  "ย":"ຢ","ร":"ຣ","ล":"ລ","ว":"ວ",
+  "ศ":"ສ","ษ":"ສ","ส":"ສ","ห":"ຫ","ฬ":"ລ","อ":"ອ","ฮ":"ຮ",
+  "ะ":"ະ","า":"າ","ำ":"ຳ","ิ":"ິ","ี":"ີ","ึ":"ຶ","ื":"ື","ุ":"ຸ","ู":"ູ",
+  "เ":"ເ","แ":"ແ","โ":"ໂ","ใ":"ໄ","ไ":"ໄ","ๆ":"ໆ"
+};
+const TH_TO_MY_CHAR = {
+  "ก":"က","ข":"ခ","ค":"ခ","ฆ":"ခ","ง":"င",
+  "จ":"စ","ฉ":"ဆ","ช":"ဆ","ซ":"ဆ","ฌ":"ဆ","ญ":"ည",
+  "ฎ":"ဒ","ฏ":"တ","ฐ":"ထ","ฑ":"ထ","ฒ":"ထ","ณ":"န",
+  "ด":"ဒ","ต":"တ","ถ":"ထ","ท":"ထ","ธ":"ထ","น":"န",
+  "บ":"ဘ","ป":"ပ","ผ":"ဖ","ฝ":"ဖ","พ":"ဖ","ฟ":"ဖ","ภ":"ဖ","ม":"မ",
+  "ย":"ယ","ร":"ရ","ล":"လ","ว":"ဝ",
+  "ศ":"သ","ษ":"သ","ส":"သ","ห":"ဟ","ฬ":"လ","อ":"အ","ฮ":"ဟ",
+  "ะ":"", "า":"ာ","ำ":"ံ","ิ":"ိ","ี":"ီ","ึ":"ု","ื":"ူ","ุ":"ု","ู":"ူ",
+  "เ":"ေ","แ":"ဲ","โ":"ို","ใ":"ို","ไ":"ို"
+};
+// ตัดวรรณยุกต์/เครื่องหมายที่ไม่จำเป็น
+const TH_DROP = new Set(["่","้","๊","๋","็","์","ํ","์","ๆ"]);
+
+function translitThai_(s, table){
+  if (!s) return s;
+  let out = "";
+  for (const ch of s){
+    if (TH_DROP.has(ch)) continue;
+    out += (table[ch] !== undefined) ? table[ch] : ch;
+  }
+  return out;
+}
+function translitThaiToLao(s){ return translitThai_(s, TH_TO_LAO_CHAR); }
+function translitThaiToMyanmar(s){ return translitThai_(s, TH_TO_MY_CHAR); }
+
+
+// กัน error จาก event handler ที่เผลอเรียกไว้ใน HTML
+function markDirty_(){ /* no-op */ }
+function validateForm_(){ /* no-op */ }
+
+
+
+// ---- i18n helpers (items/units/categories) ----
+function tItem(thName) {
+  if (currentLanguage === 'th') return thName;
+  const map = ITEM_I18N[currentLanguage];
+  if (map && map[thName]) return map[thName];
+
+  // Fallback: แปลงไทยเป็นสคริปต์ภาษานั้นแบบประมาณเสียง (ให้พนักงานอ่านได้)
+  if (currentLanguage === 'lo') return translitThaiToLao(thName);
+  if (currentLanguage === 'my') return translitThaiToMyanmar(thName);
+  return thName;
+}
+function tUnit(thUnit) {
+  if (currentLanguage === 'th') return thUnit;
+  const map = UNIT_I18N[currentLanguage];
+  if (map && map[thUnit]) return map[thUnit];
+
+  if (currentLanguage === 'lo') return translitThaiToLao(thUnit);
+  if (currentLanguage === 'my') return translitThaiToMyanmar(thUnit);
+  return thUnit;
+}
+function tCategory(thCat) {
+  if (currentLanguage === 'th') return thCat;
+  // map Thai category keys -> translated label (uses translations dict)
+  const catKeyMap = {
+    'หน้าเรือ': 'boatFront',
+    'อาหารตามสั่ง': 'customFood',
+    'เด็กเสิร์ฟ': 'staffChild'
+  };
+  const k = catKeyMap[thCat];
+  return (k && translations[currentLanguage] && translations[currentLanguage][k]) ? translations[currentLanguage][k] : thCat;
+}
+
+
+    // ข้อมูลรายการสต็อก
+    // ข้อมูลรายการสต็อก
+    const stockItems = {
+      'หน้าเรือ': [
+        { name: 'เส้นเล็ก', unit: 'ห่อ' }, { name: 'เส้นใหญ่', unit: 'ห่อ' }, { name: 'เส้นหมี่ขาว', unit: 'ก้อน' },
+        { name: 'บะหมี่เหลือง', unit: 'ห่อ' }, { name: 'วุ้นเส้น', unit: 'ห่อ' }, { name: 'มาม่า', unit: 'ก้อน' },
+        { name: 'เนื้อสด', unit: 'กิโลกรัม' }, { name: 'เนื้อเปื่อย', unit: 'กิโลกรัม' }, { name: 'ตับวัว', unit: 'กิโลกรัม' },
+        { name: 'เลือดวัว', unit: 'ขวด' }, { name: 'ลูกชิ้นเนื้อ', unit: 'กิโลกรัม' }, { name: 'หมูสด', unit: 'กิโลกรัม' },
+        { name: 'หมูเปื่อย', unit: 'กิโลกรัม' }, { name: 'ตับหมู', unit: 'กิโลกรัม' }, { name: 'เลือดหมู', unit: 'ขวด' },
+        { name: 'ลูกชิ้นหมู', unit: 'กิโลกรัม' }, { name: 'หัวน้ำเชื้อเนื้อ', unit: 'โหล' }, { name: 'เครื่องเทศเนื้อ', unit: 'โหล' },
+        { name: 'หัวน้ำเชื้อหมู', unit: 'โหล' }, { name: 'เครื่องเทศหมู', unit: 'โหล' }, { name: 'น้ำปรุงก๋วยเตี๋ยว', unit: 'โหล' },
+        { name: 'ผักบุ้ง (ตัดแล้ว)', unit: 'กิโลกรัม' }, { name: 'ถั่วคั่ว', unit: 'กิโลกรัม' }, { name: 'น้ำปลา', unit: 'แกนลอน' },
+        { name: 'พริกน้ำส้ม', unit: 'โหล' }, { name: 'พริกคั่ว', unit: 'ถัง' }, { name: 'ซีอิ๊วดำ', unit: 'ขวด' },
+        { name: 'ถั่วงอก', unit: 'กิโลกรัม' }, { name: 'ถั่วลิสงดิบ', unit: 'ถุง' }, { name: 'ถ้วยใส่น้ำซุป 9*14 นิ้ว', unit: 'แพ็ค' },
+        { name: 'ถ้วยใส่ชามก๋วยเตี๋ยว', unit: 'แพ็ค' }, { name: 'ช่องฟรีซเซอร์', unit: '' },
+        { name: 'เนื้อสด (ที่หมักแล้ว)', unit: 'กิโลกรัม' }, { name: 'เนื้อสด (ที่ยังไม่หมักหรือยังไม่ถูกตัด)', unit: 'กิโลกรัม' },
+        { name: 'เนื้อเปื่อย (เนื้อสัมชั้น)', unit: 'กิโลกรัม' }, { name: 'ตับวัว (หมักแล้ว)', unit: 'กิโลกรัม' },
+        { name: 'ตับวัว (ที่ยังไม่ถูกหมักหรือยังไม่ถูกตัด)', unit: 'กิโลกรัม' }, { name: 'เลือดวัว', unit: 'ขวด' },
+        { name: 'กระดูกวัว', unit: 'ชิ้น' }, { name: 'สันลังวัว', unit: 'ชิ้น' }, { name: 'หมูสด (ที่หมักแล้ว)', unit: 'กิโลกรัม' },
+        { name: 'หมูสด (ที่ยังไม่หมักหรือยังไม่ถูกตัด)', unit: 'กิโลกรัม' }, { name: 'หมูเปื่อย', unit: 'กิโลกรัม' },
+        { name: 'ตับหมู (หมักแล้ว)', unit: 'กิโลกรัม' }, { name: 'เลือดหมู', unit: 'ขวด' }, { name: 'เล้ง', unit: 'ชิ้น' },
+        { name: 'ขาตั้ง', unit: 'ชิ้น' }, { name: 'มันแข็ง', unit: 'กิโลกรัม' }
+     ],
+
+      'อาหารตามสั่ง': [
+        { name: 'ผักสดใหม่', unit: '' }, { name: 'ใบโหระพา', unit: 'กิโลกรัม' }, { name: 'ผักชีใบเลื่อย', unit: 'กิโลกรัม' },
+        { name: 'ผักบุ้ง (ยังไม่ตัด)', unit: 'กิโลกรัม' }, { name: 'ใบเตย', unit: 'กิโลกรัม' }, { name: 'ตะไคร้', unit: 'กิโลกรัม' },
+        { name: 'ผักชี', unit: 'กิโลกรัม' }, { name: 'รากผักชี', unit: 'กิโลกรัม' }, { name: 'กระเทียมไทย', unit: 'กิโลกรัม' },
+        { name: 'กระเทียมจีน', unit: 'กิโลกรัม' }, { name: 'ใบกะเพรา', unit: 'กิโลกรัม' }, { name: 'คะน้าเล็ก', unit: 'กิโลกรัม' },
+        { name: 'ถั่วฝักยาว', unit: 'กิโลกรัม' }, { name: 'มะม่วงดิบ', unit: 'กิโลกรัม' }, { name: 'ต้นหอม', unit: 'กิโลกรัม' },
+        { name: 'แครอท', unit: 'กิโลกรัม' }, { name: 'หัวหอมใหญ่', unit: 'กิโลกรัม' }, { name: 'มะเขือเทศ', unit: 'กิโลกรัม' },
+        { name: 'แตงกวา', unit: 'กิโลกรัม/กรัม' }, { name: 'มะนาว', unit: 'กิโลกรัม' }, { name: 'พริกชี้แดง', unit: 'กิโลกรัม' },
+        { name: 'พริกแดง', unit: 'กิโลกรัม' }, { name: 'พริกเขียว', unit: 'กิโลกรัม' }, { name: 'พริกขี้หนู', unit: 'กิโลกรัม' },
+        { name: 'พริกแห้ง', unit: 'กิโลกรัม' }, { name: 'ขิง', unit: 'กิโลกรัม/กรัม' }, { name: 'กระชาย', unit: 'กิโลกรัม' },
+        { name: 'มัน', unit: 'ลูก' }, { name: 'ใบมะกรูด', unit: 'กิโลกรัม' }, { name: 'เม็ดพริกไทยพวง', unit: 'กิโลกรัม' },
+        { name: 'หัวไชเท้า', unit: 'กิโลกรัม' }, { name: 'ลูกผักชี', unit: 'ถุง' }, { name: 'ผักกาดดอง', unit: 'กิโลกรัม' },
+        { name: 'เครื่องปรุง', unit: '' }, { name: 'นมจืด', unit: 'ขวด' }, { name: 'เนยจืด (ก้อน)', unit: 'ก้อน' },
+        { name: 'เนยเค็ม (กระปุก)', unit: 'กระปุก' }, { name: 'กะทิ', unit: 'ขวด' }, { name: 'น้ำตาลปี๊บ', unit: 'ก้อน' },
+        { name: 'แป้งมันสัปปะหลัง', unit: 'ถุง' }, { name: 'ผงหมักเนื้อสัตว์', unit: 'ซอง' }, { name: 'น้ำตาลทรายขาว', unit: 'ถุง' },
+        { name: 'น้ำตาลทรายแดง (ห่อสีม่วง)', unit: 'ถุง' }, { name: 'เกลือ', unit: 'ถุง' }, { name: 'ดอกเกลือ', unit: 'ถุง' },
+        { name: 'ซีอิ๊วขาว', unit: 'แกนลอน' }, { name: 'ซอสฝาเขียว (ขวด)', unit: 'ขวด' }, { name: 'ซอสน้ำมันหอย', unit: 'แกนลอน' },
+        { name: 'น้ำส้มสายชู', unit: 'แกนลอน' }, { name: 'น้ำปลาทิพรส(แกนลอน)', unit: 'แกนลอน' }, { name: 'พริกแกง', unit: 'ถุง' },
+        { name: 'เหล้าจีน', unit: 'ขวด' }, { name: 'น้ำมันงา', unit: 'ขวด' }, { name: 'น้ำมันพืช', unit: 'ขวด' },
+        { name: 'ผงชูรส', unit: 'ถุง' }, { name: 'รสดีไก่', unit: 'ถุง' }, { name: 'ซีอิ๊วหวานดำ', unit: 'ขวด' },
+        { name: 'น้ำจิ้มลูกชิ้น', unit: 'ถุง' }, { name: 'เนื้อสัตว์', unit: '' }, { name: 'ซี่โครงไก่', unit: 'ตัว' },
+        { name: 'อกไก่', unit: 'กิโลกรัม/กรัม' }, { name: 'ไก่ตัว', unit: 'ตัว' }, { name: 'สันในไก่', unit: 'กิโลกรัม' },
+        { name: 'ปีกไก่', unit: 'กิโลกรัม' }, { name: 'ปลาหมึก', unit: 'กิโลกรัม/กรัม' }, { name: 'กุ้ง', unit: 'กิโลกรัม/กรัม' },
+        { name: 'มันแข็ง', unit: 'กิโลกรัม' }, { name: 'ขาหมู', unit: 'กิโลกรัม' }, { name: 'ไข่ไก่', unit: 'ฟอง' },
+        { name: 'ไข่เยี่ยวม้า', unit: 'ฟอง' }, { name: 'ข้าว', unit: '' }, { name: 'ข้าวตราสามงู', unit: 'ถุง' },
+        { name: 'ข้าวตรามังกร', unit: 'ถุง' }, { name: 'ข้าวสารทำข้าวผัด', unit: 'ถุง' }, { name: 'ข้าวเหนียว', unit: 'ถุง' },
+        { name: 'สปาเก็ตตี้', unit: 'กิโลกรัม/กรัม' }
+      ],
+      'เด็กเสิร์ฟ': [
+        { name: 'น้ำเปล่า', unit: 'ขวด/แพ็ค' }, { name: 'น้ำโค้ก', unit: 'ขวด/ลัง' },
+        { name: 'น้ำแดง', unit: 'ขวด/ลัง' }, { name: 'น้ำเขียว', unit: 'ขวด/ลัง' }, { name: 'น้ำส้ม', unit: 'ขวด/ลัง' },
+        { name: 'น้ำสไปร์ท Sprite', unit: 'ขวด/ลัง' }, { name: 'โค้กซีโร่', unit: 'ขวด/แพ็ค' }, { name: 'น้ำเก๊กฮวย', unit: 'ถุง' },
+        { name: 'น้ำบ๊วย', unit: 'ถุง' }, { name: 'น้ำกระเจี๊ยบ', unit: 'ถุง' }, { name: 'โอเลี้ยง', unit: 'ถุง' },
+        { name: 'น้ำชาเขียว', unit: 'ถุง' }, { name: 'น้ำชาไทย', unit: 'ถุง' }, { name: 'น้ำชามะนาว', unit: 'ถุง' },
+        { name: 'ของหวาน และ เครื่องเคียง', unit: '' },
+        { name: 'ไอติมขนมปัง ช็อกโกแลต', unit: 'ไม้' }, { name: 'ไอติมขนมปัง วนิลลา', unit: 'ไม้' },
+        { name: 'ไอติมกรวยช็อกโกแลต', unit: 'ไม้' }, { name: 'ไอติมกรวย คุ้กกี้ช็อค', unit: 'ไม้' },
+        { name: 'ไอติมกรวย คอตตอตตอน', unit: 'ไม้' }, { name: 'ไอติมถ้วย ช็อกโกแลต', unit: 'ถ้วย' },
+        { name: 'ไอติมถ้วย วานิลลา', unit: 'ถ้วย' }, { name: 'ไอติมถ้วย ฮอกไกโด', unit: 'ถ้วย' },
+        { name: 'ไอติมถั่วดำ', unit: 'ไม้' }, { name: 'ไอติมเผือกถั่วดำ', unit: 'ไม้' }, { name: 'ไอติมทุเรียน', unit: 'ไม้' },
+        { name: 'ไอติมกะทิมะพร้าวอ่อน', unit: 'ไม้' }, { name: 'ขนมถ้วย', unit: 'คู่' }, { name: 'กากเจียว', unit: 'ถ้วย' },
+        { name: 'นมข้าวหวาน', unit: 'ถุง' }, { name: 'นมจืดกระป๋อง', unit: 'กระป๋อง' }, { name: 'ครีมเทียม', unit: 'ถุง' }, { name: 'ภาชนะบรรจุ', unit: '' },
+        { name: 'ถ้วยใส่ก๋วยเตี๋ยว', unit: 'แพ็ค' }, { name: 'กล่องใส่ข้าวอาหารตามสั่ง 1 ช่อง', unit: 'แพ็ค' },
+        { name: 'กล่องใส่ข้าวอาหารตามสั่ง 2 ช่อง', unit: 'แพ็ค' }, { name: 'กล่องใส่ขนมถ้วย', unit: 'แพ็ค' },
+        { name: 'ถุงน้ำจิ้ม 2.5*4', unit: 'แพ็ค' }, { name: 'ถุงร้อน 5*8', unit: 'แพ็ค' }, { name: 'ถุงร้อน 6*9', unit: 'แพ็ค' },
+        { name: 'ถุงใส่เนื้อหมัก 7*11', unit: 'แพ็ค' }, { name: 'ถุงน้ำหวาน 10*15', unit: 'แพ็ค' }, { name: 'ถุงหูหิ้วเล็ก 6*14', unit: 'แพ็ค' },
+        { name: 'ถุงหูหิ้วกลาง 8*16', unit: 'แพ็ค' }, { name: 'ถุงหูหิ้วใหญ่ 9*18', unit: 'แพ็ค' }, { name: 'หนังยาง', unit: 'ถุง' },
+        { name: 'ตะเกียบ', unit: 'แพ็ค' }, { name: 'ช้อนพลาสติก', unit: 'แพ็ค' }, { name: 'แก้ว 20oz', unit: 'แถว' },
+        { name: 'ฝาแก้ว 20oz', unit: 'แถว' }, { name: 'ถุงใส่แก้ว 20 oz', unit: 'แพ็ค' }, { name: 'แก้ว 30oz', unit: 'แถว' },
+        { name: 'ฝาแก้ว 30oz', unit: 'แถว' }, { name: 'ถุงใส่แก้ว 32 oz', unit: 'แพ็ค' }, { name: 'ถุงขาว', unit: 'แพ็ค' },
+        { name: 'พลาสติกแร๊ปอาหาร', unit: 'ม้วน' }, { name: 'หลอดสั้น', unit: 'แพ็ค' }, { name: 'หลอดยาว', unit: 'แพ็ค' },
+        { name: 'อื่น ๆ', unit: '' }, { name: 'ทิชชู่ตั้งโต๊ะ', unit: 'แพ็ค' }, { name: 'ทิชชู่ม้วนใหญ่', unit: 'ม้วน' },
+        { name: 'น้ำปลาขวดเล็ก', unit: 'ขวด' }, { name: 'หน้ากากอนามัย', unit: 'กล่อง' }, { name: 'ไม้จิ้มฟัน', unit: 'กระปุก' },
+        { name: 'ถุงดำหลังครัว', unit: 'แพ็ค' }, { name: 'ถุงดำหน้าเรือ', unit: 'แพ็ค' }, { name: 'น้ำยาล้างจาน', unit: 'แกนลอน' },
+        { name: 'สก็อตไบร์ท (จาน)', unit: 'ชิ้น' }, { name: 'สก็อตไบร์ท (แก้ว)', unit: 'ชิ้น' }, { name: 'ผงซักฟอก', unit: 'ถุง' },
+        { name: 'แผ่นดักแมลงวัน', unit: 'กล่อง' }, { name: 'น้ำยาไล่แมลงวัน', unit: 'แกนลอน' }, { name: 'หมวกคลุมผม', unit: 'แพ็ค' },
+        { name: 'ซอสมะเขือเทศ', unit: 'ขวด' }, { name: 'ซอสพริก', unit: 'ขวด' }, { name: 'ซอสแมคกี้', unit: 'ขวด' }
+      ]
+    };
+
+    // แยกกลุ่มหน่วยเพื่อใช้ทำ dropdown + แปลงหน่วยอัตโนมัติ
+    function getUnitGroup_(unitStr){
+      const u = (unitStr || "").trim();
+      if (u === "กิโลกรัม/กรัม" || u === "กรัม/กิโลกรัม") return "weight_kg";
+      if (u === "ขวด/แพ็ค") return "bottle_pack12";
+      if (u === "ขวด/ลัง") return "bottle_crate24";
+      return null;
+    }
+
+    // สร้าง meta สำหรับ lookup ตอนแสดงประวัติ (ใช้ชื่อสินค้าไทยเป็น key)
+    const ITEM_META_BY_NAME = (() => {
+      const map = {};
+      for (const [cat, items] of Object.entries(stockItems)) {
+        for (const it of items) {
+          if (!it || !it.name) continue;
+          const defUnit = it.unit || "";
+          const unitGroup = getUnitGroup_(defUnit);
+          map[it.name] = { defaultUnit: defUnit, unitGroup, category: cat };
+        }
+      }
+      return map;
+    })();
+
+
+    // สำหรับรายการที่เลือกหน่วยได้ (เช่น กรัม/กิโล) — บันทึกหน่วยเป็นภาษาไทย แต่ในประวัติจะสรุปเป็นกิโล
+    const UNIT_OPTIONS_BY_ITEM = {
+      "อกไก่": ["กรัม","กิโลกรัม"],
+      "ปลาหมึก": ["กรัม","กิโลกรัม"],
+      "กุ้ง": ["กรัม","กิโลกรัม"],
+      "สปาเก็ตตี้": ["กรัม","กิโลกรัม"],
+      "กากเจียว": ["กรัม","กิโลกรัม"]
+    };
+
+    function getUnitOptions_(item){
+      const byName = UNIT_OPTIONS_BY_ITEM[item.name];
+      if (byName && Array.isArray(byName) && byName.length) return byName.slice();
+      const u = String((item && item.unit) || "").trim();
+      if (u.includes("/")) return u.split("/").map(s=>s.trim()).filter(Boolean);
+      if (u === "กรัม" || u === "กิโลกรัม") return ["กรัม","กิโลกรัม"];
+      return null;
+    }
+
+    function normalizeQtyToBase_(qty, unitSelected, unitOptions) {
+  const n = Number(qty);
+  if (!isFinite(n)) return { qty: NaN, unit: String(unitSelected || '').trim() };
+
+  const u = String(unitSelected || '').trim();
+  const opts = (unitOptions || []).map(x => String(x || '').trim());
+
+  // กรัม/กิโลกรัม => บันทึกเป็นกิโลกรัม
+  if (opts.includes('กรัม') && opts.includes('กิโลกรัม')) {
+    if (u === 'กรัม') return { qty: n / 1000, unit: 'กิโลกรัม' };
+    return { qty: n, unit: 'กิโลกรัม' };
+  }
+
+  // ขวด/ลัง => บันทึกเป็นขวด (ตามสเปก: quantity*24)
+  if (opts.includes('ขวด') && opts.includes('ลัง')) {
+    if (u === 'ลัง') return { qty: n * 24, unit: 'ขวด' };
+    return { qty: n, unit: 'ขวด' };
+  }
+
+  // ขวด/แพ็ค => บันทึกเป็นขวด (ตามสเปก: quantity*12)
+  if (opts.includes('ขวด') && opts.includes('แพ็ค')) {
+    if (u === 'แพ็ค') return { qty: n * 12, unit: 'ขวด' };
+    return { qty: n, unit: 'ขวด' };
+  }
+
+  // ค่าเริ่มต้น: ไม่แปลง
+  return { qty: n, unit: u };
+}
+
+
+    function getComparableQty_(it) {
+  // ถ้ามีค่าแบบ normalize แล้ว ใช้เลย
+  if (it && typeof it.quantity_base === 'number' && isFinite(it.quantity_base)) return it.quantity_base;
+
+  // fallback: พยายาม normalize จาก unit_raw / unit / unit_group
+  const rawQty = Number(it?.quantity_raw ?? it?.quantity ?? NaN);
+  const unitSelected = String(it?.unit_raw ?? it?.unit ?? '').trim();
+  const unitGroup = String(it?.unit_group ?? it?.unit ?? '').trim();
+  const unitOptions = getUnitOptions_(unitGroup) || (unitSelected ? [unitSelected] : null);
+  if (!unitOptions) return rawQty;
+
+  const norm = normalizeQtyToBase_(rawQty, unitSelected, unitOptions);
+  return norm.qty;
+}
+    function getDisplayUnit_(it){
+      const meta = (it && it.name) ? (ITEM_META_BY_NAME[it.name] || null) : null;
+      const unitDef = meta ? (meta.defaultUnit || "") : "";
+      const unitOptions = getUnitOptions_({ name: it?.name || "", unit: unitDef });
+
+      const unitSelected = (it && it.unit) ? String(it.unit).trim() : "";
+      const normalized = normalizeQtyToBase_(1, unitSelected, unitOptions);
+      return normalized.unit || unitSelected || unitDef || "";
+    }
+
+
+
+    
+function fmtQty(v){
+  if (v === null || v === undefined) return "";
+  if (typeof v === "string" && v.trim() === "") return "";
+  const n = Number(v);
+  if (!isFinite(n)) return String(v);
+  let s = (Math.round(n * 1000) / 1000).toString();
+  if (s.indexOf(".") >= 0) s = s.replace(/\.0+$/,"").replace(/(\.\d*[1-9])0+$/,"$1");
+  return s;
+}
+
+function getDisplayQty_(it){
+      const qtyRaw = (it && it.quantity !== undefined && it.quantity !== null) ? it.quantity : "";
+      const meta = (it && it.name) ? (ITEM_META_BY_NAME[it.name] || null) : null;
+      const unitDef = meta ? (meta.defaultUnit || "") : "";
+      const unitOptions = getUnitOptions_({ name: it?.name || "", unit: unitDef });
+
+      const unitSelected = (it && it.unit) ? String(it.unit).trim() : "";
+      const normalized = normalizeQtyToBase_(qtyRaw, unitSelected, unitOptions);
+      return normalized.qty;
+    }
+
+
+
+
+    // State
+    let currentCategory = '';
+    let checkerName = '';
+    let allRecords = [];
+    let sheetPollTimer = null;
+
+    const defaultConfig = {
+      shop_name: 'ก๋วยเตี๋ยวเรือรสจนา',
+      primary_color: '#ea580c',
+      secondary_color: '#ffffff',
+      text_color: '#1f2937',
+      accent_color: '#22c55e',
+      bg_color: '#fff7ed'
+    };
+
+    // =========================
+    // ✅ Draft per category (กันกรอกแล้วกดกลับหาย)
+    // =========================
+    const DRAFT_KEY = "rosjana_stock_draft_v1";
+
+    function loadDraft_() {
+      try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || "{}"); }
+      catch(e){ return {}; }
+    }
+    function saveDraft_(draft) {
+      try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch(e){}
+    }
+    function setDraftValue_(category, itemName, field, value) {
+      const draft = loadDraft_();
+      if (!draft[category]) draft[category] = {};
+      if (!draft[category][itemName]) draft[category][itemName] = {};
+      draft[category][itemName][field] = value;
+      saveDraft_(draft);
+    }
+    function getDraftValue_(category, itemName, field) {
+      const draft = loadDraft_();
+      return draft?.[category]?.[itemName]?.[field] ?? "";
+    }
+    function clearDraft_(category) {
+      const draft = loadDraft_();
+      if (draft[category]) delete draft[category];
+      saveDraft_(draft);
+    }
+
+    // =========================
+    // Data handler (dataSdk)
+    // =========================
+    const dataHandler = {
+      onDataChanged(data) {
+        // dataSdk จะยิง event เมื่อข้อมูลเปลี่ยน -> ถือว่า real-time ในระบบนี้แล้ว
+        allRecords = Array.isArray(data) ? data : [];
+        if (!document.getElementById('history-page').classList.contains('hidden')) {
+          renderHistory();
+        }
+      }
+    };
+
+
+    // ===== Google Sheet History (fallback when dataSdk is unavailable) =====
+    let lastSheetSyncAt = 0;
+
+    async function fetchHistoryFromSheet_(limit = 300) {
+      try {
+        if (typeof GOOGLE_SHEET_WEBAPP_URL !== "string" ||
+            !GOOGLE_SHEET_WEBAPP_URL.startsWith("https://script.google.com/macros/s/")) {
+          return [];
+        }
+        const url = GOOGLE_SHEET_WEBAPP_URL + "?limit=" + encodeURIComponent(String(limit));
+        const resp = await fetch(url, { method: "GET" });
+        const data = await resp.json().catch(() => null);
+        if (!data || data.ok !== true || !Array.isArray(data.records)) return [];
+        return data.records;
+      } catch (e) {
+        console.warn("fetchHistoryFromSheet_ failed:", e);
+        return [];
+      }
+    }
+
+    async function syncHistoryFromSheet_({ silent = true } = {}) {
+      // avoid hammering
+      const now = Date.now();
+      if (now - lastSheetSyncAt < 1500) return;
+      lastSheetSyncAt = now;
+
+      const records = await fetchHistoryFromSheet_(500);
+      if (records.length) {
+        allRecords = records;
+        // ถ้าตอนนี้อยู่หน้าประวัติ ให้รีเรนเดอร์ทันที
+        if (document.getElementById('history-page') && !document.getElementById('history-page').classList.contains('hidden')) {
+          renderHistory();
+        }
+      } else if (!silent) {
+        showToast("ยังไม่พบข้อมูลใน Google Sheet", "error");
+      }
+    }
+
+
+    // =========================
+    // ✅ Quantity validation/sanitize
+    // ใส่ได้เฉพาะ 0-9 และ . / + -
+    // รองรับแปลงเป็นตัวเลขได้ทั้ง: 10, 10.5, -2, +3, 1/2, -1/2
+    // =========================
+    const QTY_ALLOWED_RE = /[0-9.\-+\/]/;
+
+    function sanitizeQuantityRaw_(raw) {
+      let out = "";
+      for (const ch of String(raw || "")) {
+        if (QTY_ALLOWED_RE.test(ch)) out += ch;
+      }
+      // จำกัด + - ให้มีได้แค่ตัวแรก
+      out = out.replace(/(?!^)[+-]/g, "");
+      return out;
+    }
+
+    function parseQuantity_(raw) {
+      const s = String(raw || "").trim();
+      if (!s) return { ok: true, value: 0 };
+
+      // number
+      if (/^[+-]?\d*(?:\.\d+)?$/.test(s)) {
+        const v = Number(s);
+        if (Number.isFinite(v)) return { ok: true, value: v };
+        return { ok: false, value: 0 };
+      }
+
+      // fraction: a/b
+      const m = s.match(/^([+-]?\d*(?:\.\d+)?)\s*\/\s*(\d*(?:\.\d+)?)$/);
+      if (m) {
+        const aStr = m[1];
+        const bStr = m[2];
+        // ถ้า a เป็น "" หรือ "+" หรือ "-" ถือว่าไม่ครบ
+        if (!aStr || aStr === "+" || aStr === "-") return { ok: false, value: 0 };
+        if (!bStr) return { ok: false, value: 0 };
+        const a = Number(aStr);
+        const b = Number(bStr);
+        if (!Number.isFinite(a) || !Number.isFinite(b) || b === 0) return { ok: false, value: 0 };
+        return { ok: true, value: a / b };
+      }
+
+      return { ok: false, value: 0 };
+    }
+
+    function sanitizeQuantityInput(el) {
+      const before = el.value;
+      const after = sanitizeQuantityRaw_(before);
+      if (before !== after) el.value = after;
+
+      const p = parseQuantity_(el.value);
+      el.classList.toggle("qty-invalid", !p.ok && el.value.trim() !== "");
+
+      // draft
+      const item = el.getAttribute("data-item");
+      setDraftValue_(currentCategory, item, "quantity_raw", el.value);
+    }
+
+    function onQtyKeyDown_(e) {
+      // อนุญาต: ตัวเลข, ., /, +, -, ปุ่มควบคุม
+      const ctrl = ["Backspace","Delete","ArrowLeft","ArrowRight","Tab","Home","End","Enter"];
+      if (ctrl.includes(e.key) || e.ctrlKey || e.metaKey) return;
+
+      if (!QTY_ALLOWED_RE.test(e.key)) {
+        e.preventDefault();
+        return;
+      }
+    }
+
+    // =========================
+    // ✅ Google Sheet sync (optional)
+    // =========================
+    async function pushToGoogleSheet_(record) {
+      if (!GOOGLE_SHEET_WEBAPP_URL || GOOGLE_SHEET_WEBAPP_URL.includes("PASTE_YOUR")) return { ok: true, skipped: true };
+      try {
+        const res = await fetch(GOOGLE_SHEET_WEBAPP_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "append", record })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) return { ok: false, error: data?.error || "HTTP " + res.status };
+        return { ok: !!data?.isOk || true, data };
+      } catch (e) {
+        return { ok: false, error: String(e) };
+      }
+    }
+
+    async function fetchFromGoogleSheet_() {
+      if (!GOOGLE_SHEET_WEBAPP_URL || GOOGLE_SHEET_WEBAPP_URL.includes("PASTE_YOUR")) return null;
+      try {
+        const res = await fetch(GOOGLE_SHEET_WEBAPP_URL + "?action=list");
+        const data = await res.json().catch(() => null);
+        if (!res.ok || !data) return null;
+        if (Array.isArray(data.records)) return data.records;
+        return null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function startSheetPolling_() {
+      if (sheetPollTimer) clearInterval(sheetPollTimer);
+      if (!GOOGLE_SHEET_WEBAPP_URL || GOOGLE_SHEET_WEBAPP_URL.includes("PASTE_YOUR")) return;
+      // ดึงทันที 1 ครั้ง
+      const initial = await fetchFromGoogleSheet_();
+      if (initial && initial.length) {
+        // รวมกับของเดิม (เอา id เป็นตัวตัดซ้ำ)
+        mergeRecords_(initial);
+      }
+      sheetPollTimer = setInterval(async () => {
+        const recs = await fetchFromGoogleSheet_();
+        if (recs && recs.length) mergeRecords_(recs);
+      }, SHEET_POLL_MS);
+    }
+
+    function mergeRecords_(incoming) {
+      // incoming อาจมีรูปแบบ {id, category, checker_name, date, items, created_at}
+      const byId = new Map((allRecords || []).map(r => [String(r.id || r.__backendId || ""), r]));
+      for (const r of incoming) {
+        const k = String(r.id || r.__backendId || "");
+        if (!k) continue;
+        if (!byId.has(k)) byId.set(k, r);
+      }
+      allRecords = Array.from(byId.values());
+      if (!document.getElementById('history-page').classList.contains('hidden')) {
+        renderHistory();
+      }
+    }
+
+    // =========================
+    // Language
+    // =========================
+
+    function setLanguage(lang) {
+      currentLanguage = lang;
+
+      // Remember Thai only (always default back to Thai on reload)
+      if (lang === 'th') localStorage.setItem('lang', 'th');
+      else localStorage.removeItem('lang');
+
+      document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById('btn-' + lang).classList.add('active');
+
+      updateLanguage();
+      rerenderVisiblePages();
+    }
+
+
+    function updateLanguage() {
+      const t = translations[currentLanguage];
+
+      document.getElementById('txt-daily-check').textContent = t.dailyCheck;
+      document.getElementById('txt-history').textContent = t.history;
+      document.getElementById('txt-date2').textContent = t.date2;
+      document.getElementById('cat-boat').textContent = t.boatFront;
+      document.getElementById('cat-boat-desc').textContent = t.boatFrontDesc;
+      document.getElementById('cat-food').textContent = t.customFood;
+      document.getElementById('cat-food-desc').textContent = t.customFoodDesc;
+      document.getElementById('cat-staff').textContent = t.staffChild;
+      document.getElementById('cat-staff-desc').textContent = t.staffChildDesc;
+
+      document.getElementById('txt-back-home').textContent = t.backHome;
+      document.getElementById('txt-staff-name-title').textContent = t.staffName;
+      document.getElementById('txt-staff-name-desc').textContent = t.enterName;
+      document.getElementById('txt-full-name-label').textContent = t.fullName;
+      document.getElementById('btn-start-checking').textContent = t.startChecking;
+
+      document.getElementById('txt-back').textContent = t.back;
+      document.getElementById('txt-item').textContent = t.item;
+      document.getElementById('txt-quantity').textContent = t.quantity;
+      document.getElementById('txt-unit').textContent = t.unit;
+      document.getElementById('txt-note').textContent = t.note;
+      document.getElementById('txt-staff-checker').textContent = t.staffChecker;
+      document.getElementById('txt-date-label').textContent = t.date;
+      document.getElementById('txt-save').textContent = t.save;
+
+      document.getElementById('txt-back-home2').textContent = t.backHome;
+      document.getElementById('txt-history-title').textContent = t.historyTitle;
+      document.getElementById('txt-select-date').textContent = t.selectDate;
+      document.getElementById('txt-category-label').textContent = t.category;
+      document.getElementById('opt-all').textContent = t.all;
+      document.getElementById('txt-no-history').textContent = t.noHistory;
+      document.getElementById('txt-back-history').textContent = t.backHistory;
+    }
+
+    function rerenderVisiblePages() {
+      try {
+        const stockPage = document.getElementById('stock-page');
+        const historyPage = document.getElementById('history-page');
+        const detailPage = document.getElementById('history-detail-page');
+        if (stockPage && !stockPage.classList.contains('hidden')) {
+          renderStockTable();
+        }
+        if (historyPage && !historyPage.classList.contains('hidden')) {
+          loadHistory();
+        }
+        if (detailPage && !detailPage.classList.contains('hidden') && window.__currentDetailRecord) {
+          showHistoryDetail(window.__currentDetailRecord);
+        }
+      } catch (e) { /* ignore */ }
+    }
+
+
+    function formatDate(date, lang) {
+      const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
+      return new Date(date).toLocaleDateString(lang === 'lo' ? 'lo-LA' : lang === 'my' ? 'my-MM' : 'en-US', options);
+    }
+
+    function formatFullDate(date, lang) {
+      const options = { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+      return new Date(date).toLocaleDateString(lang === 'lo' ? 'lo-LA' : lang === 'my' ? 'my-MM' : 'en-US', options);
+    }
+
+    function getPreviousRecord(category, currentDate) {
+      // หา "รายการก่อนหน้า" ของหมวดเดียวกัน โดยอิงจากวันที่ของรายการที่กำลังเปิดอยู่
+      // (ไม่ใช่เอาอันล่าสุด/รองล่าสุดของทั้งหมวดแบบตายตัว)
+      const curr = currentDate ? new Date(currentDate).getTime() : null;
+
+      const filtered = (allRecords || [])
+        .filter(r => r.category === category)
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      if (!filtered.length) return null;
+
+      // ถ้าไม่ส่ง currentDate มา ให้ใช้ตรรกะเดิม (รองล่าสุด)
+      if (!curr) return filtered.length > 1 ? filtered[1] : null;
+
+      // หาตัวที่เก่ากว่า currentDate ที่ใกล้ที่สุด
+      const prev = filtered.find(r => new Date(r.date).getTime() < curr);
+      return prev || null;
+    }
+
+    function getItemFromRecord(record, itemName) {
+      const items = JSON.parse(record.items || '[]');
+      return items.find(i => i.name === itemName);
+    }
+
+    // =========================
+    // Initialize
+    // =========================
+    async function init() {
+      const today = new Date();
+      document.getElementById('current-date').textContent = formatDate(today, currentLanguage);
+      document.getElementById('filter-date').valueAsDate = today;
+
+      const result = (window.dataSdk && typeof window.dataSdk.init==="function" ? await window.dataSdk.init(dataHandler) : {isOk:false});
+      if (!result.isOk) console.error('Failed to initialize data SDK');
+
+      // Sheet polling (optional)
+      startSheetPolling_();
+
+      if (window.elementSdk) {
+        window.elementSdk.init({
+          defaultConfig,
+          onConfigChange: async (config) => {
+            const shopName = config.shop_name || defaultConfig.shop_name;
+            document.getElementById('shop-title').textContent = '🍜 ' + shopName;
+          },
+          mapToCapabilities: (config) => ({
+            recolorables: [
+              { get: () => config.bg_color || defaultConfig.bg_color, set: (v) => { config.bg_color = v; window.elementSdk.setConfig({ bg_color: v }); } },
+              { get: () => config.secondary_color || defaultConfig.secondary_color, set: (v) => { config.secondary_color = v; window.elementSdk.setConfig({ secondary_color: v }); } },
+              { get: () => config.text_color || defaultConfig.text_color, set: (v) => { config.text_color = v; window.elementSdk.setConfig({ text_color: v }); } },
+              { get: () => config.primary_color || defaultConfig.primary_color, set: (v) => { config.primary_color = v; window.elementSdk.setConfig({ primary_color: v }); } },
+              { get: () => config.accent_color || defaultConfig.accent_color, set: (v) => { config.accent_color = v; window.elementSdk.setConfig({ accent_color: v }); } }
+            ],
+            borderables: [],
+            fontEditable: undefined,
+            fontSizeable: undefined
+          }),
+          mapToEditPanelValues: (config) => new Map([
+            ['shop_name', config.shop_name || defaultConfig.shop_name]
+          ])
+        });
+      }
+
+      
+
+      // ดึงประวัติจาก Google Sheet (กรณีเปิดไฟล์แบบ file:// หรือไม่มี dataSdk)
+      await syncHistoryFromSheet_({ silent: true });
+      setInterval(() => { syncHistoryFromSheet_({ silent: true }); }, 8000);
+updateLanguage();
+    }
+
+    function showPage(pageId) {
+      const pages = ['home-page', 'name-page', 'stock-page', 'history-page', 'history-detail-page'];
+      pages.forEach(p => document.getElementById(p).classList.add('hidden'));
+      document.getElementById(pageId).classList.remove('hidden');
+    }
+
+    function goHome() { showPage('home-page'); }
+    function goToNamePage() { showPage('name-page'); }
+
+    function selectCategory(category) {
+      currentCategory = category;
+
+      const badge = document.getElementById('category-badge');
+      const colors = { 'หน้าเรือ': 'bg-orange-500', 'อาหารตามสั่ง': 'bg-emerald-500', 'เด็กเสิร์ฟ': 'bg-blue-500' };
+      const icons = { 'หน้าเรือ': '🚣', 'อาหารตามสั่ง': '🍳', 'เด็กเสิร์ฟ': '🧑‍🍳' };
+
+      badge.className = `inline-flex items-center gap-2 px-4 py-2 rounded-full text-white text-sm font-medium mb-4 ${colors[category]}`;
+      badge.innerHTML = `${icons[category]} ${category}`;
+
+      document.getElementById('checker-name').value = '';
+      showPage('name-page');
+    }
+
+    function startChecking() {
+      const name = document.getElementById('checker-name').value.trim();
+      if (!name) {
+        document.getElementById('checker-name').classList.add('border-red-500');
+        document.getElementById('checker-name').placeholder = translations[currentLanguage].enterName2;
+        return;
+      }
+      document.getElementById('checker-name').classList.remove('border-red-500');
+
+      checkerName = name;
+
+      document.getElementById('display-checker-name').textContent = checkerName;
+      const today = new Date();
+      document.getElementById('display-date').textContent = formatDate(today, currentLanguage);
+
+      const badge = document.getElementById('stock-category-badge');
+      const colors = { 'หน้าเรือ': 'bg-orange-500', 'อาหารตามสั่ง': 'bg-emerald-500', 'เด็กเสิร์ฟ': 'bg-blue-500' };
+      badge.className = `px-4 py-2 rounded-full text-white text-sm font-medium ${colors[currentCategory]}`;
+      badge.textContent = currentCategory;
+
+      renderStockTable();
+      showPage('stock-page');
+    }
+
+    function renderStockTable() {
+      const tbody = document.getElementById('stock-table-body');
+      const items = stockItems[currentCategory] || [];
+
+      let html = '';
+      let index = 0;
+
+      items.forEach((item) => {
+        if (item.unit === '') {
+          if (html !== '') html += '<tr><td colspan="4" class="h-1"></td></tr>';
+          html += `
+            <tr class="bg-gray-100">
+              <td colspan="4" class="px-4 py-3 font-bold text-gray-700 text-base">${tItem(item.name)}</td>
+            </tr>
+          `;
+        } else {
+          const draftQty = getDraftValue_(currentCategory, item.name, "quantity_raw");
+          const draftNote = getDraftValue_(currentCategory, item.name, "note");
+
+const unitSelected = getDraftValue_(currentCategory, item.name, "unit") || (item.unit || "");
+const unitOptions = getUnitOptions_(item) || [item.unit || ""];
+let unitHtml = "";
+if (item.unit === "") {
+  unitHtml = "";
+} else if (unitOptions.length > 1) {
+  unitHtml = `<select class="w-24 px-2 py-1 border border-gray-300 rounded-lg text-sm bg-white"
+                      data-item="${item.name}" data-field="unit"
+                      onchange="setDraftValue_(currentCategory, this.getAttribute('data-item'), 'unit', this.value); markDirty_(); validateForm_();">
+                ${unitOptions.map(u => `<option value="${u}" ${u===unitSelected?'selected':''}>${tUnit(u)}</option>`).join('')}
+              </select>`;
+} else {
+  unitHtml = `<span class="text-gray-600">${tUnit(unitSelected || item.unit || "")}</span>`;
+}
+
+
+          html += `
+            <tr class="slide-in hover:bg-orange-50 transition-colors" style="animation-delay: ${index * 30}ms">
+              <td class="px-4 py-3">
+                <span class="font-medium text-gray-800">${tItem(item.name)}</span>
+              </td>
+              <td class="px-4 py-3">
+                <input type="text"
+                       inputmode="decimal"
+                       autocomplete="off"
+                       data-item="${item.name}"
+                       data-field="quantity_raw"
+                       placeholder="0"
+                       value="${String(draftQty || "").replace(/"/g, "&quot;")}"
+                       onkeydown="onQtyKeyDown_(event)"
+                       oninput="sanitizeQuantityInput(this)"
+                       class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-center focus:border-orange-500 focus:outline-none transition-colors text-lg font-medium">
+              </td>
+              <td class="px-4 py-3 text-center text-gray-600 font-medium">${unitHtml}</td>
+              <td class="px-4 py-3">
+                <input type="text"
+                       data-item="${item.name}"
+                       data-field="note"
+                       placeholder="-"
+                       value="${String(draftNote || "").replace(/"/g, "&quot;")}"
+                       oninput="setDraftValue_(currentCategory, this.getAttribute('data-item'), 'note', this.value)"
+                       class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:border-orange-500 focus:outline-none transition-colors">
+              </td>
+            </tr>
+          `;
+          index++;
+        }
+      });
+
+      tbody.innerHTML = html;
+
+      // validate existing draft
+      document.querySelectorAll('input[data-field="quantity_raw"]').forEach(el => sanitizeQuantityInput(el));
+    }
+
+    async function saveStock() {
+  const btn = document.getElementById('save-btn');
+  const originalBtnHtml = btn.innerHTML;
+
+  const disableBtn_ = () => {
+    btn.disabled = true;
+    btn.innerHTML = `
+      <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      ${translations[currentLanguage].save}
+    `;
+  };
+
+  const enableBtn_ = () => {
+    btn.disabled = false;
+    btn.innerHTML = originalBtnHtml;
+  };
+
+  const withTimeout_ = (promise, ms, label) =>
+    Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error(label || "TIMEOUT")), ms))
+    ]);
+
+  disableBtn_();
+
+  try {
+    const items = stockItems[currentCategory] || [];
+
+    // validate quantities
+    const missingEls = [];
+    const invalidEls = [];
+    const stockEntries = items.map(item => {
+      // skip section headers
+      if (!item.unit) return { __section: true, name: item.name, unit: item.unit };
+
+      const qtyEl = document.querySelector(`input[data-item="${item.name}"][data-field="quantity_raw"]`);
+      const noteEl = document.querySelector(`input[data-item="${item.name}"][data-field="note"]`);
+
+      const raw = qtyEl ? qtyEl.value.trim() : "";
+      const parsed = parseQuantity_(raw);
+
+      // ต้องกรอก "จำนวน" ให้ครบทุกช่อง (ใส่ 0 ได้ แต่ห้ามปล่อยว่าง)
+      if (qtyEl && raw === "") {
+        missingEls.push(qtyEl);
+      } else if (qtyEl && !parsed.ok) {
+        invalidEls.push(qtyEl);
+      }
+
+      // unit: prefer dropdown if present (Thai value)
+      const unitSelectEl = Array.from(document.querySelectorAll('select[data-field="unit"]'))
+        .find(el => el && el.dataset && el.dataset.item === item.name);
+      const unitInput = (unitSelectEl ? unitSelectEl.value : null)
+        || getDraftValue_(currentCategory, item.name, "unit")
+        || (item.unit || "");
+      const qtyNum = parsed.ok ? parsed.value : 0;
+      const unitOptions = getUnitOptions_(item) || [String(item.unit || '').trim()];
+      const norm = normalizeQtyToBase_(qtyNum, unitInput, unitOptions);
+      const quantity_base = norm.qty;
+      const unitSaved = norm.unit;
+
+      return {
+        name: item.name,          // Thai only (ส่งขึ้นชีท)
+        unit: unitSaved,          // unit ที่บันทึก
+        unit_input: unitInput,    // unit ที่พนักงานเลือก
+        unit_group: String(item.unit || '').trim(),
+        unit_options: unitOptions,
+        quantity_raw: raw,
+        quantity: quantity_base,    // บันทึกเป็นหน่วยฐานอัตโนมัติ
+        quantity_base: quantity_base, // สำหรับ history
+        note: noteEl ? noteEl.value.trim() : ""
+      };
+    }).filter(x => !x.__section);
+
+    if (missingEls.length) {
+      missingEls.forEach(el => el.classList.add("border-red-500"));
+      missingEls[0].scrollIntoView({ behavior: "smooth", block: "center" });
+      showToast("กรุณากรอกจำนวนให้ครบทุกช่อง (ใส่ 0 ได้ แต่ห้ามปล่อยว่าง)", "error");
+      return;
+    }
+
+    if (invalidEls.length) {
+      invalidEls.forEach(el => el.classList.add("border-red-500"));
+      invalidEls[0].scrollIntoView({ behavior: "smooth", block: "center" });
+      showToast("รูปแบบจำนวนไม่ถูกต้อง (อนุญาต 0-9 และ . / + -)", "error");
+      return;
+    }
+
+    if (allRecords.length >= 999) {
+      showToast(translations[currentLanguage].fullLimit, 'error');
+      return;
+    }
+
+    const nowIso = new Date().toISOString();
+    const record = {
+      id: Date.now().toString(),
+      category: currentCategory,
+      checker_name: checkerName,
+      date: nowIso,
+      items: JSON.stringify(stockEntries),
+      created_at: nowIso
+    };
+
+    // 1) Save to Canva dataSdk (if available)
+    let canvaOk = false;
+    try {
+      if (window.dataSdk && typeof window.dataSdk.create === "function") {
+        const r = await withTimeout_(window.dataSdk.create(record), 15000, "DATA_SDK_TIMEOUT");
+        canvaOk = !!(r && r.isOk);
+      }
+    } catch (e) {
+      console.warn("dataSdk.create failed:", e);
+    }
+
+    // 2) Save to Google Sheet (if URL configured)
+    let sheetOk = false;
+    try {
+      if (typeof GOOGLE_SHEET_WEBAPP_URL === "string" &&
+          GOOGLE_SHEET_WEBAPP_URL.startsWith("https://script.google.com/macros/s/")) {
+
+        // add backendId if canva returns one later; for now generate locally
+        const payload = {
+          __backendId: "web-" + Date.now().toString(),
+          ...record
+        };
+
+        const resp = await withTimeout_(fetch(GOOGLE_SHEET_WEBAPP_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) }), 15000, "SHEET_POST_TIMEOUT");
+
+        // Apps Script อาจคืน 302/200/0 ในบางสภาพแวดล้อม → ถือว่าผ่านถ้า fetch ไม่ throw
+        sheetOk = !!resp;
+      }
+    } catch (e) {
+      console.warn("sheet POST failed:", e);
+    }
+
+    if (canvaOk || sheetOk) {
+      // clear draft for this category
+      clearDraft_(currentCategory);
+      showToast(translations[currentLanguage].saved, 'success');
+      setTimeout(() => goHome(), 800);
+    } else {
+      showToast(translations[currentLanguage].error + " (บันทึกไม่สำเร็จ)", 'error');
+    }
+  } catch (err) {
+    console.error(err);
+    showToast(translations[currentLanguage].error, 'error');
+  } finally {
+    enableBtn_();
+  }
+}
+
+
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast');
+      const msgEl = document.getElementById('toast-message');
+      msgEl.textContent = message;
+
+      toast.className = `fixed bottom-4 left-1/2 transform -translate-x-1/2 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-2 transition-all duration-300`;
+
+      setTimeout(() => { toast.classList.add('hidden'); }, 3000);
+    }
+
+    function showHistory() {
+      showPage('history-page');
+      syncHistoryFromSheet_({ silent: true });
+      renderHistory();
+    }
+    function filterHistory() { renderHistory(); }
+
+    function renderHistory() {
+      const filterDate = document.getElementById('filter-date').value;
+      const filterCategory = document.getElementById('filter-category').value;
+
+      let filtered = [...(allRecords || [])];
+
+      if (filterDate) {
+        filtered = filtered.filter(r => {
+          const recordDate = new Date(r.date).toISOString().split('T')[0];
+          return recordDate === filterDate;
+        });
+      }
+
+      if (filterCategory) filtered = filtered.filter(r => r.category === filterCategory);
+
+      filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      const listEl = document.getElementById('history-list');
+      const noHistory = document.getElementById('no-history');
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = '';
+        noHistory.classList.remove('hidden');
+        return;
+      }
+
+      noHistory.classList.add('hidden');
+
+      const colors = { 'หน้าเรือ': 'from-orange-500 to-orange-600', 'อาหารตามสั่ง': 'from-emerald-500 to-emerald-600', 'เด็กเสิร์ฟ': 'from-blue-500 to-blue-600' };
+      const icons = { 'หน้าเรือ': '🚣', 'อาหารตามสั่ง': '🍳', 'เด็กเสิร์ฟ': '🧑‍🍳' };
+
+      listEl.innerHTML = filtered.map(record => `
+        <div onclick="showHistoryDetail('${record.__backendId || record.id}')" class="bg-white rounded-xl p-4 shadow-md hover:shadow-lg transition-all cursor-pointer">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-gradient-to-br ${colors[record.category]} rounded-xl flex items-center justify-center text-2xl">
+              ${icons[record.category]}
+            </div>
+            <div class="flex-1">
+              <p class="font-semibold text-gray-800">${tCategory(record.category)}</p>
+              <p class="text-sm text-gray-500">${translations[currentLanguage].staffChecker} ${record.checker_name}</p>
+              <p class="text-sm text-gray-400">${formatFullDate(record.date, currentLanguage)}</p>
+            </div>
+            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function showHistoryDetail(idOrBackendId) {
+      const record = (allRecords || []).find(r => (r.__backendId || r.id) === idOrBackendId);
+      if (!record) return;
+
+      const items = JSON.parse(record.items || '[]');
+      const previousRecord = getPreviousRecord(record.category, record.date);
+      const t = translations[currentLanguage];
+
+      const colors = { 'หน้าเรือ': 'from-orange-500 to-orange-600', 'อาหารตามสั่ง': 'from-emerald-500 to-emerald-600', 'เด็กเสิร์ฟ': 'from-blue-500 to-blue-600' };
+
+      const content = document.getElementById('history-detail-content');
+      content.innerHTML = `
+        <div class="bg-gradient-to-r ${colors[record.category]} p-4 text-white">
+          <h3 class="text-xl font-bold mb-2">${tCategory(record.category)}</h3>
+          <p class="text-sm opacity-90">${t.staffChecker} <span class="font-semibold">${record.checker_name}</span></p>
+          <p class="text-sm opacity-90">${t.date} <span class="font-semibold">${formatFullDate(record.date, currentLanguage)}</span></p>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">${t.item}</th>
+                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">${t.quantity}</th>
+                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">${t.unit}</th>
+                ${previousRecord ? `<th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">${t.compared}<br><span class="text-xs font-normal">${formatDate(previousRecord.date, currentLanguage)}</span></th>
+                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">${t.changeLabel}</th>
+                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">${t.changePctLabel}</th>` : ''}
+                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">${t.note}</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              ${items.map(item => {
+                let comparison = '';
+                let trend = '';
+                if (previousRecord) {
+                  const prevItem = getItemFromRecord(previousRecord, item.name);
+                  if (prevItem) {
+                    const curBase = getComparableQty_(item);
+                    const prevBase = getComparableQty_(prevItem);
+                    const diff = curBase - prevBase;
+
+                    if (diff > 0) trend = `<span class="trend-up">⬆ +${fmtQty(diff)}</span>`;
+                    else if (diff < 0) trend = `<span class="trend-down">⬇ ${fmtQty(diff)}</span>`;
+                    else trend = `<span class="trend-neutral">- ${t.noChange}</span>`;
+
+                    let pctHtml = `<span class="text-gray-400">-</span>`;
+                    if (prevBase > 0) {
+                      const pct = (diff / prevBase) * 100;
+                      const sign = pct > 0 ? "+" : "";
+                      const cls = pct > 0 ? "trend-up" : (pct < 0 ? "trend-down" : "trend-neutral");
+                      pctHtml = `<span class="${cls}">${sign}${pct.toFixed(1)}%</span>`;
+                    } else if (prevBase === 0 && curBase !== 0) {
+                      pctHtml = `<span class="text-xs text-blue-600">${t.noPrevious}</span>`;
+                    }
+
+                    comparison = `<td class="px-4 py-3 text-center font-semibold text-gray-600">${fmtQty(getDisplayQty_(prevItem))} ${tUnit(getDisplayUnit_(prevItem))}</td>
+                                  <td class="px-4 py-3 text-center font-semibold">${trend}</td>
+                                  <td class="px-4 py-3 text-center font-semibold">${pctHtml}</td>`;
+                  } else {
+                    comparison = `<td class="px-4 py-3 text-center text-gray-400">-</td>
+                                  <td class="px-4 py-3 text-center"><span class="text-xs text-blue-600">${t.noPrevious}</span></td>
+                                  <td class="px-4 py-3 text-center"><span class="text-gray-400">-</span></td>`;
+                  }
+                }
+
+                return `
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 font-medium text-gray-800">${tItem(item.name)}</td>
+                    <td class="px-4 py-3 text-center font-semibold ${(item.quantity || 0) > 0 ? 'text-green-600' : 'text-red-500'}">${(item.quantity ?? 0)}</td>
+                    <td class="px-4 py-3 text-center text-gray-600">${tUnit(getDisplayUnit_(item))}</td>
+                    ${comparison}
+                    <td class="px-4 py-3 text-gray-500">${item.note || '-'}</td>
+                  </tr>
+                `;
+              }).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      showPage('history-detail-page');
+    }
+
+    init();
+  </script>
+
+  <!-- original cloudflare snippet preserved -->
+  <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9cc1f7c8006f45ab',t:'MTc3MDc5MzIxMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+</body>
+</html>
