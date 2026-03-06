@@ -43,7 +43,6 @@
     <!-- หน้าหลัก -->
     <div id="home-page" class="min-h-full p-4 md:p-6 pt-20">
       <div class="max-w-lg mx-auto">
-        <!-- Header -->
         <div class="flex items-center justify-between mb-8">
           <div>
             <h1 id="shop-title" class="text-2xl md:text-3xl font-bold text-orange-800">🍜 ก๋วยเตี๋ยวเรือรสจนา</h1>
@@ -57,13 +56,11 @@
           </button>
         </div>
 
-        <!-- วันที่ -->
         <div class="bg-white rounded-2xl p-4 shadow-md mb-6">
           <p id="txt-date2" class="text-gray-500 text-sm">วันที่</p>
           <p id="current-date" class="text-lg font-semibold text-gray-800"></p>
         </div>
 
-        <!-- ปุ่มเลือกหมวดหมู่ -->
         <div class="space-y-4">
           <button onclick="selectCategory('หน้าเรือ')" class="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white p-5 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.02] active:scale-[0.98]">
             <div class="flex items-center gap-4">
@@ -151,7 +148,6 @@
             <p class="text-sm opacity-90"><span id="txt-date-label">วันที่:</span> <span id="display-date" class="font-semibold"></span></p>
           </div>
 
-          <!-- ตารางสต็อก -->
           <div class="overflow-x-auto">
             <table class="w-full">
               <thead class="bg-gray-50">
@@ -193,7 +189,6 @@
 
         <h2 id="txt-history-title" class="text-2xl font-bold text-gray-800 mb-4">📋 ประวัติการเช็คสต็อก</h2>
 
-        <!-- ตัวกรอง -->
         <div class="bg-white rounded-2xl p-4 shadow-md mb-6">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -212,7 +207,6 @@
           </div>
         </div>
 
-        <!-- รายการประวัติ -->
         <div id="history-list" class="space-y-4"></div>
         <div id="no-history" class="hidden text-center py-12">
           <div class="text-6xl mb-4">📭</div>
@@ -244,20 +238,9 @@
   </div>
 
   <script>
-    // =========================
-    // ✅ ตั้งค่า Google Sheet (Apps Script Web App)
-    // =========================
-    // 1) สร้าง Google Apps Script เป็น Web App แล้วใส่ URL ลงด้านล่าง
-    // 2) ให้ Web App รองรับ:
-    //    - POST: รับ record JSON แล้ว append ลง Sheet
-    //    - GET : คืน records ทั้งหมด (หรือช่วงล่าสุด) เพื่อทำ real-time history
-    //
-    // ตัวอย่าง payload ที่ส่งไป: { action:"append", record:{...} }
-    //
     const GOOGLE_SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxcyVjugKR0hKo9wQCxGF-FbZJj84G-m1wEDfCnmMIE8qBINkLqZlXtLmgG-wJCfhWj2w/exec";
-    const SHEET_POLL_MS = 10000; // 10 วินาที
+    const SHEET_POLL_MS = 10000;
 
-    // ภาษาเนื้อหา
     let currentLanguage = 'th';
 
     const translations = {
@@ -299,249 +282,320 @@
         increased: 'เพิ่มขึ้น',
         decreased: 'ลดลง',
         noChange: 'ไม่เปลี่ยนแปลง',
-      changeLabel: 'เปลี่ยนแปลง',
-      changePctLabel: 'เทียบเป็น %',
+        changeLabel: 'เปลี่ยนแปลง',
+        changePctLabel: 'เทียบเป็น %',
         noPrevious: 'ไม่มีรอบก่อนหน้า',
         invalidQty: 'รูปแบบจำนวนไม่ถูกต้อง (ตัวอย่าง: 10, 10.5, -2, 1/2)'
       },
       lo: {
-        stockCheck: 'ລະບົບກວດສອບສະ ໝາດ',
-        dailyCheck: 'ກວດສອບສະ ໝາດປະຈໍາວັນ',
+        stockCheck: 'ລະບົບກວດສອບສະຕ໋ອກ',
+        dailyCheck: 'ກວດສອບສະຕ໋ອກປະຈໍາວັນ',
         history: 'ປະຫວັດ',
-        boatFront: 'ດ້ານໜ້າຂອງເຮືອ',
-        boatFrontDesc: 'ກວດສອບວັດຖຸດິບທີ່ຫາກໍາຫນົດໄວ້ໃນດ້ານໜ້າເຮືອ',
-        customFood: 'ອາຫານທີ່ສັ່ງຂໍ',
-        customFoodDesc: 'ກວດສອບວັດຖຸດິບສໍາລັບອາຫານທີ່ສັ່ງຂໍ',
-        staffChild: 'ເດັກໃຊ້ບໍລິການ',
-        staffChildDesc: 'ກວດສອບອຸປະກອນຂອງເດັກໃຊ້ບໍລິການ',
-        backHome: 'ກັບຫນ້າຫຼັກ',
-        staffName: 'ຜູ້ກວດສອບສະ ໝາດ',
-        enterName: 'ກະລຸນາໃສ່ຊື່ຂອງຜູ້ກວດສອບສະ ໝາດ',
-        fullName: 'ຊື່ແລະສະ ໝາຸນ',
-        startChecking: 'ເລີ່ມກວດສອບສະ ໝາດ',
+        boatFront: 'ໜ້າເຮືອ',
+        boatFrontDesc: 'ກວດສອບວັດຖຸດິບໜ້າເຮືອ',
+        customFood: 'ອາຫານຕາມສັ່ງ',
+        customFoodDesc: 'ກວດສອບວັດຖຸດິບອາຫານຕາມສັ່ງ',
+        staffChild: 'ເດັກເສີບ',
+        staffChildDesc: 'ກວດສອບອຸປະກອນເດັກເສີບ',
+        backHome: 'ກັບໜ້າຫຼັກ',
+        staffName: 'ຜູ້ເຊັກສະຕ໋ອກ',
+        enterName: 'ກະລຸນາໃສ່ຊື່ຜູ້ເຊັກສະຕ໋ອກ',
+        fullName: 'ຊື່-ນາມສະກຸນ',
+        startChecking: 'ເລີ່ມເຊັກສະຕ໋ອກ',
         item: 'ລາຍການ',
         quantity: 'ຈໍານວນ',
-        unit: 'ຫົວໜ່ວຍ',
-        note: 'ຫມາຍເຫດ',
+        unit: 'ໜ່ວຍ',
+        note: 'ໝາຍເຫດ',
         save: 'ບັນທຶກຂໍ້ມູນ',
-        historyTitle: 'ປະຫວັດການກວດສອບສະ ໝາດ',
-        selectDate: 'ເລືອກວັນທີ່',
+        historyTitle: 'ປະຫວັດການເຊັກສະຕ໋ອກ',
+        selectDate: 'ເລືອກວັນທີ',
         category: 'ໝວດໝູ່',
         all: 'ທັງໝົດ',
-        staffChecker: 'ຜູ້ກວດສອບສະ ໝາດ:',
-        date: 'ວັນທີ່:',
-        noHistory: 'ບໍ່ພົບປະຫວັດການກວດສອບສະ ໝາດ',
+        staffChecker: 'ຜູ້ເຊັກສະຕ໋ອກ:',
+        date: 'ວັນທີ:',
+        noHistory: 'ບໍ່ພົບປະຫວັດການເຊັກສະຕ໋ອກ',
         saved: 'ບັນທຶກຂໍ້ມູນສໍາເລັດ!',
         error: 'ເກີດຂໍ້ຜິດພາດ ກະລຸນາລອງໃໝ່',
         fullLimit: 'ບໍ່ສາມາດບັນທຶກໄດ້ ຂໍ້ມູນເຕັມແລ້ວ (ສູງສຸດ 999 ລາຍການ)',
         enterName2: 'ກະລຸນາໃສ່ຊື່',
-        date2: 'ວັນທີ່',
+        date2: 'ວັນທີ',
         back: 'ກັບ',
-        backHistory: 'ກັບຫນ້າປະຫວັດ',
-        compared: 'ຕຽບທຽບກັບ',
+        backHistory: 'ກັບໜ້າປະຫວັດ',
+        compared: 'ທຽບກັບ',
         increased: 'ເພີ່ມຂຶ້ນ',
         decreased: 'ຫຼຸດລົງ',
-        noChange: 'ບໍ່ມີການປ່ຽນແປງ',
-      changeLabel: 'ປ່ຽນແປງ',
-      changePctLabel: '%',
+        noChange: 'ບໍ່ປ່ຽນແປງ',
+        changeLabel: 'ປ່ຽນແປງ',
+        changePctLabel: '%',
         noPrevious: 'ບໍ່ມີຮອບກ່ອນໜ້າ',
         invalidQty: 'ຮູບແບບຈໍານວນບໍ່ຖືກຕ້ອງ'
       },
       my: {
-        stockCheck: 'စတုံးတည်ဆောက်ခြင်းစနစ်',
-        dailyCheck: 'နေ့စဉ်စတုံးတည်ဆောက်ခြင်း',
-        history: 'ရာဇ၀တ်မှတ်တမ်း',
-        boatFront: 'လှေအရှေ့ဖက်',
-        boatFrontDesc: 'လှေအရှေ့ဖက်ရှိတင့သွင်းခဲ့သောပစ္စည်းများကိုစီစစ်ခြင်း',
-        customFood: 'အမှာစာအစားအသောက်',
-        customFoodDesc: 'အမှာစာအစားအသောက်နှင့်ဆိုင်ရာပစ္စည်းများကိုစီစစ်ခြင်း',
-        staffChild: 'ကလေးဘောင်များ',
-        staffChildDesc: 'ကလေးဘောင်များအတွက်ကိရိယာများကိုစီစစ်ခြင်း',
-        backHome: 'အဓိကစာမျက်နှာသို့ပြန်သွားခြင်း',
-        staffName: 'စီစစ်သူ',
-        enterName: 'စတုံးစီစစ်သူ၏အမည်ကိုထည့်သွင်းပါ',
-        fullName: 'အမည်-အကျအိုး',
-        startChecking: 'စတုံးစီစ့ခြင်းစတင်ခြင်း',
+        stockCheck: 'စတော့စစ်ဆေးမှုစနစ်',
+        dailyCheck: 'နေ့စဉ်စတော့စစ်ခြင်း',
+        history: 'မှတ်တမ်း',
+        boatFront: 'หน้าเรือ',
+        boatFrontDesc: 'หน้าเรือရှိวัตถุดิบကိုစစ်ဆေးခြင်း',
+        customFood: 'อาหารตามสั่ง',
+        customFoodDesc: 'อาหารตามสั่งရှိวัตถุดิบကိုစစ်ဆေးခြင်း',
+        staffChild: 'เด็กเสิร์ฟ',
+        staffChildDesc: 'เด็กเสิร์ฟအသုံးအဆောင်များကိုစစ်ဆေးခြင်း',
+        backHome: 'ပင်မစာမျက်နှာသို့ပြန်မည်',
+        staffName: 'စတော့စစ်သူ',
+        enterName: 'စတော့စစ်သူအမည်ထည့်ပါ',
+        fullName: 'အမည်-နာမည်',
+        startChecking: 'စတော့စစ်ခြင်းစတင်မည်',
         item: 'လာကိုင်',
         quantity: 'ကျိုင်နွယ်',
         unit: 'နွယ်',
         note: 'မိုင်းဟင်',
-        save: 'မှတ်ချက်အလက်သိုးဆည်းခြင်း',
-        historyTitle: 'စတုံးစီစစ်မှုမှတ်တမ်း',
-        selectDate: 'ရက်စွဲရွေးချယ်ခြင်း',
+        save: 'အချက်အလက်သိမ်းမည်',
+        historyTitle: 'စတော့စစ်ဆေးမှုမှတ်တမ်း',
+        selectDate: 'ရက်စွဲရွေးပါ',
         category: 'အမျိုးအစား',
         all: 'အားလုံး',
-        staffChecker: 'စီစစ်သူ:',
+        staffChecker: 'စတော့စစ်သူ:',
         date: 'ရက်စွဲ:',
-        noHistory: 'စတုံးစီစစ်မှုမှတ်တမ်းမတည်ရှိ',
-        saved: 'အချက်အလက်သိမ်းဆည်းခြင်းအောင်မြင်သည်!',
-        error: 'အမှားအယွင်းတစ်ခုဖြစ်ပွားခဲ့သည် ထပ်မံကြိုးစားပါ',
-        fullLimit: 'သိမ့ုံးဆည်းမ့ အချက်အလက်ပြည့်သွာ့သည် (အများဆုံး ၉၉၉ ပစ္စည်း)',
-        enterName2: 'အမည်ထည့်သွင်းပါ',
+        noHistory: 'စတော့စစ်ဆေးမှုမှတ်တမ်းမရှိပါ',
+        saved: 'အချက်အလက်သိမ်းပြီးပါပြီ!',
+        error: 'အမှားဖြစ်ပွားပါသည် ထပ်စမ်းပါ',
+        fullLimit: 'သိမ်း၍မရပါ၊ အချက်အလက်ပြည့်နေပါပြီ (အများဆုံး 999 รายการ)',
+        enterName2: 'အမည်ထည့်ပါ',
         date2: 'ရက်စွဲ',
-        back: 'ပြန်သွားခြင်း',
-        backHistory: 'ရာဇ၀တ်မှတ်တမ်းစာမျက်နှာသို့ပြန်သွားခြင်း',
-        compared: 'နှင့်နှိုင်းယှဉ်ခြင်း',
-        increased: 'တိုးမြင့်လာသည်',
-        decreased: 'လျော့ကျသည်',
-        noChange: 'ပြောင်းလဲမှုမရှိသည်',
-      changeLabel: 'ပြောင်းလဲမှု',
-      changePctLabel: '%',
-        noPrevious: 'အရှိုင်းရှိသည့်လည်အရှိုင်း',
+        back: 'နောက်သို့',
+        backHistory: 'မှတ်တမ်းသို့ပြန်မည်',
+        compared: 'နှိုင်းယှဉ်မှု',
+        increased: 'တိုးလာသည်',
+        decreased: 'လျော့သွားသည်',
+        noChange: 'မပြောင်းလဲပါ',
+        changeLabel: 'ပြောင်းလဲမှု',
+        changePctLabel: '%',
+        noPrevious: 'အရင်အချက်အလက်မရှိပါ',
         invalidQty: 'ပမာဏပုံစံမမှန်ပါ'
       }
+    };
 
-};
+    const ITEM_I18N = {
+      lo: {},
+      my: {
+        "ผักสด": "ဖာစုံ",
+        "ใบโหระพา": "ဝါလာဖာ",
+        "ผักชีใบเลื่อย": "နံနံပင်",
+        "ผักบุ้ง (ยังไม่ตัด)": "ဖာပု",
+        "ใบเตย": "ဘာတဲ",
+        "ตะไคร้": "တခိုင်း",
+        "ผักชี": "ဖာချီ",
+        "รากผักชี": "နံပင်မြစ်",
+        "กระเทียมไทย": "ကထီရိုင်",
+        "กระเทียมจีน": "ကထီရိုင်လစ်",
+        "ใบกะเพรา": "ကဖောင်",
+        "คะน้าเล็ก": "ခနါးလစ်",
+        "ถั่วฝักยาว": "ပဲသီး",
+        "มะม่วงดิบ": "သရက်သီး",
+        "ต้นหอม": "တွန့်ဟော်",
+        "แครอท": "လာဉနီ",
+        "หัวหอมใหญ่": "ဟော်ရိုင်",
+        "มะเขือเทศ": "ခရမ်းချည်သီး",
+        "มะละกอ": "သဘော်သီး",
+        "แตงกวา": "သခွာသီး",
+        "มะนาว": "သံပုရာသီး",
+        "พริกหยวก": "ဖိရွာ",
+        "พริกชี้แดง": "ဖိစိတဲ",
+        "พริกแดง": "ဖိတဲ",
+        "พริกเขียว": "ခီယို",
+        "พริกขี้หนู": "ခိနို",
+        "พริกแห้ง": "ငရုတ်ခြောက်",
+        "ขิง": "ဂျင်း",
+        "กระชาย": "ကာချိုင်",
+        "มัน": "မာ",
+        "ใบมะกรูด": "မာကို",
+        "เม็ดพริกไทยพวง": "ဖီထိုင်",
+        "หัวไชเท้า": "မေှာ်လာဉ",
+        "ลูกผักชี": "လွတ်ဖာချီ",
+        "ผักกาดดอง": "ဖာခိုင်တော်",
 
-// =========================
-// ✅ i18n dictionaries (prevent ReferenceError)
-// ถ้ายังไม่ได้ทำ mapping รายการ/หน่วย ให้เป็นวัตถุว่างไว้ก่อน
-// =========================
-const ITEM_I18N = (typeof window.ITEM_I18N === 'object' && window.ITEM_I18N) ? window.ITEM_I18N : {
-  lo: {},
-  my: {}
-};
+        "เครื่องปรุง": "ခင်ယားပို",
+        "นมจืด": "နိုကြည်",
+        "เนยจืด": "အရသာမစိ",
+        "เนยเค็ม": "နိုင်ခင်",
+        "กะทิ": "ကထီး",
+        "น้ำตาลปี๊บ": "ပိ",
+        "แป้งมันสัปปะหลัง": "ပဲမာ",
+        "ผงหมักเนื้อสัตว์": "ဖိုမာနီယား",
+        "น้ำตาลทรายขาว": "သကြားဖြူ",
+        "น้ำตาลทรายแดง": "သကြားနီ",
+        "เกลือ": "ဆား",
+        "ดอกเกลือ": "ပန်းဆား",
+        "ซีอิ๊วขาว": "ဦးခေါင်",
+        "ซอสฝาเขียว": "ဖာခင်",
+        "ซอสน้ำมันหอย": "နားမာဟုတ်",
+        "น้ำส้มสายชู": "ဆာချို",
+        "น้ำปลาทิพรส": "ငံပျာရည်သေး",
+        "พริกแกง": "ဖီကယ်",
+        "เหล้าจีน": "အရက်",
+        "น้ำมันงา": "နားမာငံ",
+        "น้ำมันพืช": "ဆီ",
+        "ผงชูรส": "အချိုမှုန့်",
+        "รสดีไก่": "ခနောကြက်",
+        "รสดีหมู": "ခနောဝက်",
+        "ซีอิ๊วหวานดำ": "ဆီဦးဝါ",
+        "น้ำจิ้มลูกชิ้น": "နားမကြည့်",
 
-const UNIT_I18N = (typeof window.UNIT_I18N === 'object' && window.UNIT_I18N) ? window.UNIT_I18N : {
-  // key = หน่วยภาษาไทยใน stockItems
-  lo: {
-    "": "",
-    "ห่อ": "ຫໍ່",
-    "ก้อน": "ກ້ອນ",
-    "กิโลกรัม": "ກິໂລກຣາມ",
-    "กิโลกรัม/กรัม": "ກິໂລ/ກຣາມ",
-    "ขวด": "ຂວດ",
-    "ขวด/แพ็ค": "ຂວດ/ແພັກ",
-    "ขวด/ลัง": "ຂວດ/ລັງ",
-    "ถุง": "ຖົງ",
-    "ซอง": "ຊອງ",
-    "กล่อง": "ກ່ອງ",
-    "กระป๋อง": "ກະປ໋ອງ",
-    "กระปุก": "ກະປຸກ",
-    "ชิ้น": "ຊິ້ນ",
-    "คู่": "ຄູ່",
-    "ตัว": "ຕົວ",
-    "ถัง": "ຖັງ",
-    "ถ้วย": "ຖ້ວຍ",
-    "ฟอง": "ຟອງ",
-    "ม้วน": "ມ້ວນ",
-    "ลูก": "ລູກ",
-    "แพ็ค": "ແພັກ",
-    "แถว": "ແຖວ",
-    "โหล": "ໂຫຼ",
-    "ไม้": "ໄມ້",
-    "แกนลอน": "ແກນລອນ"
-  },
-  my: {
-    "": "",
-    "ห่อ": "ထုပ်",
-    "ก้อน": "ကော့",
-    "กิโลกรัม": "ကီလိုကလာ",
-    "กิโลกรัม/กรัม": "ကီလိုကလာ/ကလာ",
-    "ขวด": "ခိုဝါ",
-    "ขวด/แพ็ค": "ခိုဝါ/ပက်",
-    "ขวด/ลัง": "ခိုဝါ/လှောင်",
-    "ถุง": "အိတ်",
-    "ซอง": "ဇော်",
-    "กล่อง": "သေတ္တာ",
-    "กระป๋อง": "တင်း",
-    "กระปุก": "ဘူး",
-    "ชิ้น": "ခု",
-    "คู่": "စုံ",
-    "ตัว": "လုံး",
-    "ถัง": "ပုံး",
-    "ถ้วย": "ခွက်",
-    "ฟอง": "ဖော်",
-    "ม้วน": "လိပ်",
-    "ลูก": "လွတ်",
-    "แพ็ค": "ပက်",
-    "แถว": "တန်း",
-    "โหล": "တစ်ဒါဇင်",
-    "ไม้": "ချောင်း",
-    "แกนลอน": "လိပ် (แกน)"
-  }
-};
+        "เนื้อสัตว์": "မဲသားသေး",
+        "ซี่โครงไก่": "ဆီးခိုကိုင်",
+        "อกไก่": "အိုကိုင်",
+        "ไก่ตัว": "ကြက်",
+        "สันในไก่": "ကြက်သဲမြစ်",
+        "ปีกไก่": "ပီကိုင်",
+        "ปลาหมึก": "ကင်းမွန်",
+        "กุ้ง": "ပုဇွန်",
+        "มันแข็ง": "မာခဲ",
+        "ขาหมู": "ခါမူ",
+        "ไข่ไก่": "ကြက်ဉ",
+        "ไข่เป็ด": "ဘဲဉ",
+        "ไข่เยี่ยวม้า": "ခိုင်ယုတ်မား",
 
-// --------- Fallback transliteration (กันกรณียังไม่ทำ dict รายการ) ----------
-const TH_TO_LAO_CHAR = {
-  "ก":"ກ","ข":"ຂ","ค":"ຄ","ฆ":"ຄ","ง":"ງ",
-  "จ":"ຈ","ฉ":"ຊ","ช":"ຊ","ซ":"ຊ","ฌ":"ຊ","ญ":"ຍ",
-  "ฎ":"ດ","ฏ":"ຕ","ฐ":"ທ","ฑ":"ທ","ฒ":"ທ","ณ":"ນ",
-  "ด":"ດ","ต":"ຕ","ถ":"ຖ","ท":"ທ","ธ":"ທ","น":"ນ",
-  "บ":"ບ","ป":"ປ","ผ":"ຜ","ฝ":"ຝ","พ":"ພ","ฟ":"ຟ","ภ":"ພ","ม":"ມ",
-  "ย":"ຢ","ร":"ຣ","ล":"ລ","ว":"ວ",
-  "ศ":"ສ","ษ":"ສ","ส":"ສ","ห":"ຫ","ฬ":"ລ","อ":"ອ","ฮ":"ຮ",
-  "ะ":"ະ","า":"າ","ำ":"ຳ","ิ":"ິ","ี":"ີ","ึ":"ຶ","ื":"ື","ุ":"ຸ","ู":"ູ",
-  "เ":"ເ","แ":"ແ","โ":"ໂ","ใ":"ໄ","ไ":"ໄ","ๆ":"ໆ"
-};
-const TH_TO_MY_CHAR = {
-  "ก":"က","ข":"ခ","ค":"ခ","ฆ":"ခ","ง":"င",
-  "จ":"စ","ฉ":"ဆ","ช":"ဆ","ซ":"ဆ","ฌ":"ဆ","ญ":"ည",
-  "ฎ":"ဒ","ฏ":"တ","ฐ":"ထ","ฑ":"ထ","ฒ":"ထ","ณ":"န",
-  "ด":"ဒ","ต":"တ","ถ":"ထ","ท":"ထ","ธ":"ထ","น":"န",
-  "บ":"ဘ","ป":"ပ","ผ":"ဖ","ฝ":"ဖ","พ":"ဖ","ฟ":"ဖ","ภ":"ဖ","ม":"မ",
-  "ย":"ယ","ร":"ရ","ล":"လ","ว":"ဝ",
-  "ศ":"သ","ษ":"သ","ส":"သ","ห":"ဟ","ฬ":"လ","อ":"အ","ฮ":"ဟ",
-  "ะ":"", "า":"ာ","ำ":"ံ","ิ":"ိ","ี":"ီ","ึ":"ု","ื":"ူ","ุ":"ု","ู":"ူ",
-  "เ":"ေ","แ":"ဲ","โ":"ို","ใ":"ို","ไ":"ို"
-};
-// ตัดวรรณยุกต์/เครื่องหมายที่ไม่จำเป็น
-const TH_DROP = new Set(["่","้","๊","๋","็","์","ํ","์","ๆ"]);
+        "ข้าว": "ခေါက်",
+        "ข้าวตราสามงู": "တိုင်ဆာငူ",
+        "ข้าวตรามังกร": "တိုင်မကော်",
+        "ข้าวสารทำข้าวผัด": "ခေါက်ဖာ",
+        "ข้าวเหนียว": "ကောက်ညှင်း",
+        "สปาเก็ตตี้": "စပါကိတ်တိ"
+      }
+    };
 
-function translitThai_(s, table){
-  if (!s) return s;
-  let out = "";
-  for (const ch of s){
-    if (TH_DROP.has(ch)) continue;
-    out += (table[ch] !== undefined) ? table[ch] : ch;
-  }
-  return out;
-}
-function translitThaiToLao(s){ return translitThai_(s, TH_TO_LAO_CHAR); }
-function translitThaiToMyanmar(s){ return translitThai_(s, TH_TO_MY_CHAR); }
+    const UNIT_I18N = {
+      lo: {
+        "": "",
+        "ห่อ": "ຫໍ່",
+        "ก้อน": "ກ້ອນ",
+        "กิโลกรัม": "ກິໂລກຣາມ",
+        "กิโลกรัม/กรัม": "ກິໂລ/ກຣາມ",
+        "ขวด": "ຂວດ",
+        "ขวด/แพ็ค": "ຂວດ/ແພັກ",
+        "ขวด/ลัง": "ຂວດ/ລັງ",
+        "ถุง": "ຖົງ",
+        "ซอง": "ຊອງ",
+        "กล่อง": "ກ່ອງ",
+        "กระป๋อง": "ກະປ໋ອງ",
+        "กระปุก": "ກະປຸກ",
+        "ชิ้น": "ຊິ້ນ",
+        "คู่": "ຄູ່",
+        "ตัว": "ຕົວ",
+        "ถัง": "ຖັງ",
+        "ถ้วย": "ຖ້ວຍ",
+        "ฟอง": "ຟອງ",
+        "ม้วน": "ມ້ວນ",
+        "ลูก": "ລູກ",
+        "แพ็ค": "ແພັກ",
+        "แถว": "ແຖວ",
+        "โหล": "ໂຫຼ",
+        "ไม้": "ໄມ້",
+        "แกนลอน": "ແກນລອນ",
+        "กรัม": "ກຣາມ"
+      },
+      my: {
+        "": "",
+        "ถุง": "အိတ်",
+        "กิโลกรัม": "ကီလိုကလာ",
+        "กรัม": "ကလာ",
+        "ฟอง": "ဖော်",
+        "ขวด": "ခိုဝါ",
+        "แกนลอน": "ကဲလော်",
+        "ซอง": "ဇော်",
+        "ก้อน": "ကော့",
+        "ลูก": "လွတ်",
+        "ห่อ": "ထုပ်",
+        "กิโลกรัม/กรัม": "ကီလိုကလာ/ကလာ",
+        "ขวด/แพ็ค": "ခိုဝါ/ပက်",
+        "ขวด/ลัง": "ခိုဝါ/လှောင်",
+        "กล่อง": "သေတ္တာ",
+        "กระป๋อง": "တင်း",
+        "กระปุก": "ဘူး",
+        "ชิ้น": "ခု",
+        "คู่": "စုံ",
+        "ตัว": "လုံး",
+        "ถัง": "ပုံး",
+        "ถ้วย": "ခွက်",
+        "ม้วน": "လိပ်",
+        "แพ็ค": "ပက်",
+        "แถว": "တန်း",
+        "โหล": "တစ်ဒါဇင်",
+        "ไม้": "ချောင်း"
+      }
+    };
 
+    const TH_TO_LAO_CHAR = {
+      "ก":"ກ","ข":"ຂ","ค":"ຄ","ฆ":"ຄ","ง":"ງ",
+      "จ":"ຈ","ฉ":"ຊ","ช":"ຊ","ซ":"ຊ","ฌ":"ຊ","ญ":"ຍ",
+      "ฎ":"ດ","ฏ":"ຕ","ฐ":"ທ","ฑ":"ທ","ฒ":"ທ","ณ":"ນ",
+      "ด":"ດ","ต":"ຕ","ถ":"ຖ","ท":"ທ","ธ":"ທ","น":"ນ",
+      "บ":"ບ","ป":"ປ","ผ":"ຜ","ฝ":"ຝ","พ":"ພ","ฟ":"ຟ","ภ":"ພ","ม":"ມ",
+      "ย":"ຢ","ร":"ຣ","ล":"ລ","ว":"ວ",
+      "ศ":"ສ","ษ":"ສ","ส":"ສ","ห":"ຫ","ฬ":"ລ","อ":"ອ","ฮ":"ຮ",
+      "ะ":"ະ","า":"າ","ำ":"ຳ","ิ":"ິ","ี":"ີ","ึ":"ຶ","ื":"ື","ุ":"ຸ","ู":"ູ",
+      "เ":"ເ","แ":"ແ","โ":"ໂ","ใ":"ໄ","ไ":"ໄ","ๆ":"ໆ"
+    };
 
-// กัน error จาก event handler ที่เผลอเรียกไว้ใน HTML
-function markDirty_(){ /* no-op */ }
-function validateForm_(){ /* no-op */ }
+    const TH_TO_MY_CHAR = {
+      "ก":"က","ข":"ခ","ค":"ခ","ฆ":"ခ","ง":"င",
+      "จ":"စ","ฉ":"ဆ","ช":"ဆ","ซ":"ဆ","ฌ":"ဆ","ญ":"ည",
+      "ฎ":"ဒ","ฏ":"တ","ฐ":"ထ","ฑ":"ထ","ฒ":"ထ","ณ":"န",
+      "ด":"ဒ","ต":"တ","ถ":"ထ","ท":"ထ","ธ":"ထ","น":"န",
+      "บ":"ဘ","ป":"ပ","ผ":"ဖ","ฝ":"ဖ","พ":"ဖ","ฟ":"ဖ","ภ":"ဖ","ม":"မ",
+      "ย":"ယ","ร":"ရ","ล":"လ","ว":"ဝ",
+      "ศ":"သ","ษ":"သ","ส":"သ","ห":"ဟ","ฬ":"လ","อ":"အ","ฮ":"ဟ",
+      "ะ":"", "า":"ာ","ำ":"ံ","ิ":"ိ","ี":"ီ","ึ":"ု","ื":"ူ","ุ":"ု","ู":"ူ",
+      "เ":"ေ","แ":"ဲ","โ":"ို","ใ":"ို","ไ":"ို"
+    };
 
+    const TH_DROP = new Set(["่","้","๊","๋","็","์","ํ","์","ๆ"]);
 
+    function translitThai_(s, table){
+      if (!s) return s;
+      let out = "";
+      for (const ch of s){
+        if (TH_DROP.has(ch)) continue;
+        out += (table[ch] !== undefined) ? table[ch] : ch;
+      }
+      return out;
+    }
 
-// ---- i18n helpers (items/units/categories) ----
-function tItem(thName) {
-  if (currentLanguage === 'th') return thName;
-  const map = ITEM_I18N[currentLanguage];
-  if (map && map[thName]) return map[thName];
+    function translitThaiToLao(s){ return translitThai_(s, TH_TO_LAO_CHAR); }
+    function translitThaiToMyanmar(s){ return translitThai_(s, TH_TO_MY_CHAR); }
 
-  // Fallback: แปลงไทยเป็นสคริปต์ภาษานั้นแบบประมาณเสียง (ให้พนักงานอ่านได้)
-  if (currentLanguage === 'lo') return translitThaiToLao(thName);
-  if (currentLanguage === 'my') return translitThaiToMyanmar(thName);
-  return thName;
-}
-function tUnit(thUnit) {
-  if (currentLanguage === 'th') return thUnit;
-  const map = UNIT_I18N[currentLanguage];
-  if (map && map[thUnit]) return map[thUnit];
+    function markDirty_(){}
+    function validateForm_(){}
 
-  if (currentLanguage === 'lo') return translitThaiToLao(thUnit);
-  if (currentLanguage === 'my') return translitThaiToMyanmar(thUnit);
-  return thUnit;
-}
-function tCategory(thCat) {
-  if (currentLanguage === 'th') return thCat;
-  // map Thai category keys -> translated label (uses translations dict)
-  const catKeyMap = {
-    'หน้าเรือ': 'boatFront',
-    'อาหารตามสั่ง': 'customFood',
-    'เด็กเสิร์ฟ': 'staffChild'
-  };
-  const k = catKeyMap[thCat];
-  return (k && translations[currentLanguage] && translations[currentLanguage][k]) ? translations[currentLanguage][k] : thCat;
-}
+    function tItem(thName) {
+      if (currentLanguage === 'th') return thName;
+      const map = ITEM_I18N[currentLanguage];
+      if (map && map[thName]) return map[thName];
+      if (currentLanguage === 'lo') return translitThaiToLao(thName);
+      if (currentLanguage === 'my') return translitThaiToMyanmar(thName);
+      return thName;
+    }
 
+    function tUnit(thUnit) {
+      if (currentLanguage === 'th') return thUnit;
+      const map = UNIT_I18N[currentLanguage];
+      if (map && map[thUnit]) return map[thUnit];
+      if (currentLanguage === 'lo') return translitThaiToLao(thUnit);
+      if (currentLanguage === 'my') return translitThaiToMyanmar(thUnit);
+      return thUnit;
+    }
 
-    // ข้อมูลรายการสต็อก
-    // ข้อมูลรายการสต็อก
+    function tCategory(thCat) {
+      if (currentLanguage === 'th') return thCat;
+      const catKeyMap = {
+        'หน้าเรือ': 'boatFront',
+        'อาหารตามสั่ง': 'customFood',
+        'เด็กเสิร์ฟ': 'staffChild'
+      };
+      const k = catKeyMap[thCat];
+      return (k && translations[currentLanguage] && translations[currentLanguage][k]) ? translations[currentLanguage][k] : thCat;
+    }
+
     const stockItems = {
       'หน้าเรือ': [
         { name: 'เส้นเล็ก', unit: 'ห่อ' }, { name: 'เส้นใหญ่', unit: 'ห่อ' }, { name: 'เส้นหมี่ขาว', unit: 'ก้อน' },
@@ -562,36 +616,94 @@ function tCategory(thCat) {
         { name: 'หมูสด (ที่ยังไม่หมักหรือยังไม่ถูกตัด)', unit: 'กิโลกรัม' }, { name: 'หมูเปื่อย', unit: 'กิโลกรัม' },
         { name: 'ตับหมู (หมักแล้ว)', unit: 'กิโลกรัม' }, { name: 'เลือดหมู', unit: 'ขวด' }, { name: 'เล้ง', unit: 'ชิ้น' },
         { name: 'ขาตั้ง', unit: 'ชิ้น' }, { name: 'มันแข็ง', unit: 'กิโลกรัม' }
-     ],
+      ],
 
       'อาหารตามสั่ง': [
-        { name: 'ผักสดใหม่', unit: '' }, { name: 'ใบโหระพา', unit: 'กิโลกรัม' }, { name: 'ผักชีใบเลื่อย', unit: 'กิโลกรัม' },
-        { name: 'ผักบุ้ง (ยังไม่ตัด)', unit: 'กิโลกรัม' }, { name: 'ใบเตย', unit: 'กิโลกรัม' }, { name: 'ตะไคร้', unit: 'กิโลกรัม' },
-        { name: 'ผักชี', unit: 'กิโลกรัม' }, { name: 'รากผักชี', unit: 'กิโลกรัม' }, { name: 'กระเทียมไทย', unit: 'กิโลกรัม' },
-        { name: 'กระเทียมจีน', unit: 'กิโลกรัม' }, { name: 'ใบกะเพรา', unit: 'กิโลกรัม' }, { name: 'คะน้าเล็ก', unit: 'กิโลกรัม' },
-        { name: 'ถั่วฝักยาว', unit: 'กิโลกรัม' }, { name: 'มะม่วงดิบ', unit: 'กิโลกรัม' }, { name: 'ต้นหอม', unit: 'กิโลกรัม' },
-        { name: 'แครอท', unit: 'กิโลกรัม' }, { name: 'หัวหอมใหญ่', unit: 'กิโลกรัม' }, { name: 'มะเขือเทศ', unit: 'กิโลกรัม' },
-        { name: 'แตงกวา', unit: 'กิโลกรัม/กรัม' }, { name: 'มะนาว', unit: 'กิโลกรัม' }, { name: 'พริกชี้แดง', unit: 'กิโลกรัม' },
-        { name: 'พริกแดง', unit: 'กิโลกรัม' }, { name: 'พริกเขียว', unit: 'กิโลกรัม' }, { name: 'พริกขี้หนู', unit: 'กิโลกรัม' },
-        { name: 'พริกแห้ง', unit: 'กิโลกรัม' }, { name: 'ขิง', unit: 'กิโลกรัม/กรัม' }, { name: 'กระชาย', unit: 'กิโลกรัม' },
-        { name: 'มัน', unit: 'ลูก' }, { name: 'ใบมะกรูด', unit: 'กิโลกรัม' }, { name: 'เม็ดพริกไทยพวง', unit: 'กิโลกรัม' },
-        { name: 'หัวไชเท้า', unit: 'กิโลกรัม' }, { name: 'ลูกผักชี', unit: 'ถุง' }, { name: 'ผักกาดดอง', unit: 'กิโลกรัม' },
-        { name: 'เครื่องปรุง', unit: '' }, { name: 'นมจืด', unit: 'ขวด' }, { name: 'เนยจืด (ก้อน)', unit: 'ก้อน' },
-        { name: 'เนยเค็ม (กระปุก)', unit: 'กระปุก' }, { name: 'กะทิ', unit: 'ขวด' }, { name: 'น้ำตาลปี๊บ', unit: 'ก้อน' },
-        { name: 'แป้งมันสัปปะหลัง', unit: 'ถุง' }, { name: 'ผงหมักเนื้อสัตว์', unit: 'ซอง' }, { name: 'น้ำตาลทรายขาว', unit: 'ถุง' },
-        { name: 'น้ำตาลทรายแดง (ห่อสีม่วง)', unit: 'ถุง' }, { name: 'เกลือ', unit: 'ถุง' }, { name: 'ดอกเกลือ', unit: 'ถุง' },
-        { name: 'ซีอิ๊วขาว', unit: 'แกนลอน' }, { name: 'ซอสฝาเขียว (ขวด)', unit: 'ขวด' }, { name: 'ซอสน้ำมันหอย', unit: 'แกนลอน' },
-        { name: 'น้ำส้มสายชู', unit: 'แกนลอน' }, { name: 'น้ำปลาทิพรส(แกนลอน)', unit: 'แกนลอน' }, { name: 'พริกแกง', unit: 'ถุง' },
-        { name: 'เหล้าจีน', unit: 'ขวด' }, { name: 'น้ำมันงา', unit: 'ขวด' }, { name: 'น้ำมันพืช', unit: 'ขวด' },
-        { name: 'ผงชูรส', unit: 'ถุง' }, { name: 'รสดีไก่', unit: 'ถุง' }, { name: 'ซีอิ๊วหวานดำ', unit: 'ขวด' },
-        { name: 'น้ำจิ้มลูกชิ้น', unit: 'ถุง' }, { name: 'เนื้อสัตว์', unit: '' }, { name: 'ซี่โครงไก่', unit: 'ตัว' },
-        { name: 'อกไก่', unit: 'กิโลกรัม/กรัม' }, { name: 'ไก่ตัว', unit: 'ตัว' }, { name: 'สันในไก่', unit: 'กิโลกรัม' },
-        { name: 'ปีกไก่', unit: 'กิโลกรัม' }, { name: 'ปลาหมึก', unit: 'กิโลกรัม/กรัม' }, { name: 'กุ้ง', unit: 'กิโลกรัม/กรัม' },
-        { name: 'มันแข็ง', unit: 'กิโลกรัม' }, { name: 'ขาหมู', unit: 'กิโลกรัม' }, { name: 'ไข่ไก่', unit: 'ฟอง' },
-        { name: 'ไข่เยี่ยวม้า', unit: 'ฟอง' }, { name: 'ข้าว', unit: '' }, { name: 'ข้าวตราสามงู', unit: 'ถุง' },
-        { name: 'ข้าวตรามังกร', unit: 'ถุง' }, { name: 'ข้าวสารทำข้าวผัด', unit: 'ถุง' }, { name: 'ข้าวเหนียว', unit: 'ถุง' },
+        { name: 'ผักสด', unit: '' },
+        { name: 'ใบโหระพา', unit: 'กิโลกรัม' },
+        { name: 'ผักชีใบเลื่อย', unit: 'กิโลกรัม' },
+        { name: 'ผักบุ้ง (ยังไม่ตัด)', unit: 'กิโลกรัม' },
+        { name: 'ใบเตย', unit: 'กิโลกรัม' },
+        { name: 'ตะไคร้', unit: 'กิโลกรัม' },
+        { name: 'ผักชี', unit: 'กิโลกรัม' },
+        { name: 'รากผักชี', unit: 'กิโลกรัม' },
+        { name: 'กระเทียมไทย', unit: 'กิโลกรัม' },
+        { name: 'กระเทียมจีน', unit: 'กิโลกรัม' },
+        { name: 'ใบกะเพรา', unit: 'กิโลกรัม' },
+        { name: 'คะน้าเล็ก', unit: 'กิโลกรัม' },
+        { name: 'ถั่วฝักยาว', unit: 'กิโลกรัม' },
+        { name: 'มะม่วงดิบ', unit: 'กิโลกรัม' },
+        { name: 'ต้นหอม', unit: 'กิโลกรัม' },
+        { name: 'แครอท', unit: 'กิโลกรัม' },
+        { name: 'หัวหอมใหญ่', unit: 'กิโลกรัม' },
+        { name: 'มะเขือเทศ', unit: 'กิโลกรัม' },
+        { name: 'มะละกอ', unit: 'กิโลกรัม' },
+        { name: 'แตงกวา', unit: 'กิโลกรัม/กรัม' },
+        { name: 'มะนาว', unit: 'กิโลกรัม' },
+        { name: 'พริกหยวก', unit: 'กิโลกรัม' },
+        { name: 'พริกชี้แดง', unit: 'กิโลกรัม' },
+        { name: 'พริกแดง', unit: 'กิโลกรัม' },
+        { name: 'พริกเขียว', unit: 'กิโลกรัม' },
+        { name: 'พริกขี้หนู', unit: 'กิโลกรัม' },
+        { name: 'พริกแห้ง', unit: 'กิโลกรัม' },
+        { name: 'ขิง', unit: 'กิโลกรัม/กรัม' },
+        { name: 'กระชาย', unit: 'กิโลกรัม' },
+        { name: 'มัน', unit: 'ลูก' },
+        { name: 'ใบมะกรูด', unit: 'กิโลกรัม' },
+        { name: 'เม็ดพริกไทยพวง', unit: 'กิโลกรัม' },
+        { name: 'หัวไชเท้า', unit: 'กิโลกรัม' },
+        { name: 'ลูกผักชี', unit: 'ถุง' },
+        { name: 'ผักกาดดอง', unit: 'กิโลกรัม' },
+
+        { name: 'เครื่องปรุง', unit: '' },
+        { name: 'นมจืด', unit: 'ขวด' },
+        { name: 'เนยจืด', unit: 'ก้อน' },
+        { name: 'เนยเค็ม', unit: 'กระปุก' },
+        { name: 'กะทิ', unit: 'ขวด' },
+        { name: 'น้ำตาลปี๊บ', unit: 'ก้อน' },
+        { name: 'แป้งมันสัปปะหลัง', unit: 'ถุง' },
+        { name: 'ผงหมักเนื้อสัตว์', unit: 'ซอง' },
+        { name: 'น้ำตาลทรายขาว', unit: 'ถุง' },
+        { name: 'น้ำตาลทรายแดง', unit: 'ถุง' },
+        { name: 'เกลือ', unit: 'ถุง' },
+        { name: 'ดอกเกลือ', unit: 'ถุง' },
+        { name: 'ซีอิ๊วขาว', unit: 'แกนลอน' },
+        { name: 'ซอสฝาเขียว', unit: 'ขวด' },
+        { name: 'ซอสน้ำมันหอย', unit: 'แกนลอน' },
+        { name: 'น้ำส้มสายชู', unit: 'แกนลอน' },
+        { name: 'น้ำปลาทิพรส', unit: 'แกนลอน' },
+        { name: 'พริกแกง', unit: 'ถุง' },
+        { name: 'เหล้าจีน', unit: 'ขวด' },
+        { name: 'น้ำมันงา', unit: 'ขวด' },
+        { name: 'น้ำมันพืช', unit: 'ขวด' },
+        { name: 'ผงชูรส', unit: 'ถุง' },
+        { name: 'รสดีไก่', unit: 'ถุง' },
+        { name: 'รสดีหมู', unit: 'ถุง' },
+        { name: 'ซีอิ๊วหวานดำ', unit: 'ขวด' },
+        { name: 'น้ำจิ้มลูกชิ้น', unit: 'ถุง' },
+
+        { name: 'เนื้อสัตว์', unit: '' },
+        { name: 'ซี่โครงไก่', unit: 'ตัว' },
+        { name: 'อกไก่', unit: 'กิโลกรัม/กรัม' },
+        { name: 'ไก่ตัว', unit: 'ตัว' },
+        { name: 'สันในไก่', unit: 'กิโลกรัม' },
+        { name: 'ปีกไก่', unit: 'กิโลกรัม' },
+        { name: 'ปลาหมึก', unit: 'กิโลกรัม/กรัม' },
+        { name: 'กุ้ง', unit: 'กิโลกรัม/กรัม' },
+        { name: 'มันแข็ง', unit: 'กิโลกรัม' },
+        { name: 'ขาหมู', unit: 'กิโลกรัม' },
+        { name: 'ไข่ไก่', unit: 'ฟอง' },
+        { name: 'ไข่เป็ด', unit: 'ฟอง' },
+        { name: 'ไข่เยี่ยวม้า', unit: 'ฟอง' },
+
+        { name: 'ข้าว', unit: '' },
+        { name: 'ข้าวตราสามงู', unit: 'ถุง' },
+        { name: 'ข้าวตรามังกร', unit: 'ถุง' },
+        { name: 'ข้าวสารทำข้าวผัด', unit: 'ถุง' },
+        { name: 'ข้าวเหนียว', unit: 'ถุง' },
         { name: 'สปาเก็ตตี้', unit: 'กิโลกรัม/กรัม' }
       ],
+
       'เด็กเสิร์ฟ': [
         { name: 'น้ำเปล่า', unit: 'ขวด/แพ็ค' }, { name: 'น้ำโค้ก', unit: 'ขวด/ลัง' },
         { name: 'น้ำแดง', unit: 'ขวด/ลัง' }, { name: 'น้ำเขียว', unit: 'ขวด/ลัง' }, { name: 'น้ำส้ม', unit: 'ขวด/ลัง' },
@@ -624,7 +736,6 @@ function tCategory(thCat) {
       ]
     };
 
-    // แยกกลุ่มหน่วยเพื่อใช้ทำ dropdown + แปลงหน่วยอัตโนมัติ
     function getUnitGroup_(unitStr){
       const u = (unitStr || "").trim();
       if (u === "กิโลกรัม/กรัม" || u === "กรัม/กิโลกรัม") return "weight_kg";
@@ -633,7 +744,6 @@ function tCategory(thCat) {
       return null;
     }
 
-    // สร้าง meta สำหรับ lookup ตอนแสดงประวัติ (ใช้ชื่อสินค้าไทยเป็น key)
     const ITEM_META_BY_NAME = (() => {
       const map = {};
       for (const [cat, items] of Object.entries(stockItems)) {
@@ -647,8 +757,6 @@ function tCategory(thCat) {
       return map;
     })();
 
-
-    // สำหรับรายการที่เลือกหน่วยได้ (เช่น กรัม/กิโล) — บันทึกหน่วยเป็นภาษาไทย แต่ในประวัติจะสรุปเป็นกิโล
     const UNIT_OPTIONS_BY_ITEM = {
       "อกไก่": ["กรัม","กิโลกรัม"],
       "ปลาหมึก": ["กรัม","กิโลกรัม"],
@@ -667,87 +775,70 @@ function tCategory(thCat) {
     }
 
     function normalizeQtyToBase_(qty, unitSelected, unitOptions) {
-  const n = Number(qty);
-  if (!isFinite(n)) return { qty: NaN, unit: String(unitSelected || '').trim() };
+      const n = Number(qty);
+      if (!isFinite(n)) return { qty: NaN, unit: String(unitSelected || '').trim() };
 
-  const u = String(unitSelected || '').trim();
-  const opts = (unitOptions || []).map(x => String(x || '').trim());
+      const u = String(unitSelected || '').trim();
+      const opts = (unitOptions || []).map(x => String(x || '').trim());
 
-  // กรัม/กิโลกรัม => บันทึกเป็นกิโลกรัม
-  if (opts.includes('กรัม') && opts.includes('กิโลกรัม')) {
-    if (u === 'กรัม') return { qty: n / 1000, unit: 'กิโลกรัม' };
-    return { qty: n, unit: 'กิโลกรัม' };
-  }
+      if (opts.includes('กรัม') && opts.includes('กิโลกรัม')) {
+        if (u === 'กรัม') return { qty: n / 1000, unit: 'กิโลกรัม' };
+        return { qty: n, unit: 'กิโลกรัม' };
+      }
 
-  // ขวด/ลัง => บันทึกเป็นขวด (ตามสเปก: quantity*24)
-  if (opts.includes('ขวด') && opts.includes('ลัง')) {
-    if (u === 'ลัง') return { qty: n * 24, unit: 'ขวด' };
-    return { qty: n, unit: 'ขวด' };
-  }
+      if (opts.includes('ขวด') && opts.includes('ลัง')) {
+        if (u === 'ลัง') return { qty: n * 24, unit: 'ขวด' };
+        return { qty: n, unit: 'ขวด' };
+      }
 
-  // ขวด/แพ็ค => บันทึกเป็นขวด (ตามสเปก: quantity*12)
-  if (opts.includes('ขวด') && opts.includes('แพ็ค')) {
-    if (u === 'แพ็ค') return { qty: n * 12, unit: 'ขวด' };
-    return { qty: n, unit: 'ขวด' };
-  }
+      if (opts.includes('ขวด') && opts.includes('แพ็ค')) {
+        if (u === 'แพ็ค') return { qty: n * 12, unit: 'ขวด' };
+        return { qty: n, unit: 'ขวด' };
+      }
 
-  // ค่าเริ่มต้น: ไม่แปลง
-  return { qty: n, unit: u };
-}
-
+      return { qty: n, unit: u };
+    }
 
     function getComparableQty_(it) {
-  // ถ้ามีค่าแบบ normalize แล้ว ใช้เลย
-  if (it && typeof it.quantity_base === 'number' && isFinite(it.quantity_base)) return it.quantity_base;
+      if (it && typeof it.quantity_base === 'number' && isFinite(it.quantity_base)) return it.quantity_base;
+      const rawQty = Number(it?.quantity_raw ?? it?.quantity ?? NaN);
+      const unitSelected = String(it?.unit_raw ?? it?.unit ?? '').trim();
+      const unitGroup = String(it?.unit_group ?? it?.unit ?? '').trim();
+      const unitOptions = getUnitOptions_(unitGroup) || (unitSelected ? [unitSelected] : null);
+      if (!unitOptions) return rawQty;
+      const norm = normalizeQtyToBase_(rawQty, unitSelected, unitOptions);
+      return norm.qty;
+    }
 
-  // fallback: พยายาม normalize จาก unit_raw / unit / unit_group
-  const rawQty = Number(it?.quantity_raw ?? it?.quantity ?? NaN);
-  const unitSelected = String(it?.unit_raw ?? it?.unit ?? '').trim();
-  const unitGroup = String(it?.unit_group ?? it?.unit ?? '').trim();
-  const unitOptions = getUnitOptions_(unitGroup) || (unitSelected ? [unitSelected] : null);
-  if (!unitOptions) return rawQty;
-
-  const norm = normalizeQtyToBase_(rawQty, unitSelected, unitOptions);
-  return norm.qty;
-}
     function getDisplayUnit_(it){
       const meta = (it && it.name) ? (ITEM_META_BY_NAME[it.name] || null) : null;
       const unitDef = meta ? (meta.defaultUnit || "") : "";
       const unitOptions = getUnitOptions_({ name: it?.name || "", unit: unitDef });
-
       const unitSelected = (it && it.unit) ? String(it.unit).trim() : "";
       const normalized = normalizeQtyToBase_(1, unitSelected, unitOptions);
       return normalized.unit || unitSelected || unitDef || "";
     }
 
+    function fmtQty(v){
+      if (v === null || v === undefined) return "";
+      if (typeof v === "string" && v.trim() === "") return "";
+      const n = Number(v);
+      if (!isFinite(n)) return String(v);
+      let s = (Math.round(n * 1000) / 1000).toString();
+      if (s.indexOf(".") >= 0) s = s.replace(/\.0+$/,"").replace(/(\.\d*[1-9])0+$/,"$1");
+      return s;
+    }
 
-
-    
-function fmtQty(v){
-  if (v === null || v === undefined) return "";
-  if (typeof v === "string" && v.trim() === "") return "";
-  const n = Number(v);
-  if (!isFinite(n)) return String(v);
-  let s = (Math.round(n * 1000) / 1000).toString();
-  if (s.indexOf(".") >= 0) s = s.replace(/\.0+$/,"").replace(/(\.\d*[1-9])0+$/,"$1");
-  return s;
-}
-
-function getDisplayQty_(it){
+    function getDisplayQty_(it){
       const qtyRaw = (it && it.quantity !== undefined && it.quantity !== null) ? it.quantity : "";
       const meta = (it && it.name) ? (ITEM_META_BY_NAME[it.name] || null) : null;
       const unitDef = meta ? (meta.defaultUnit || "") : "";
       const unitOptions = getUnitOptions_({ name: it?.name || "", unit: unitDef });
-
       const unitSelected = (it && it.unit) ? String(it.unit).trim() : "";
       const normalized = normalizeQtyToBase_(qtyRaw, unitSelected, unitOptions);
       return normalized.qty;
     }
 
-
-
-
-    // State
     let currentCategory = '';
     let checkerName = '';
     let allRecords = [];
@@ -762,18 +853,17 @@ function getDisplayQty_(it){
       bg_color: '#fff7ed'
     };
 
-    // =========================
-    // ✅ Draft per category (กันกรอกแล้วกดกลับหาย)
-    // =========================
     const DRAFT_KEY = "rosjana_stock_draft_v1";
 
     function loadDraft_() {
       try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || "{}"); }
       catch(e){ return {}; }
     }
+
     function saveDraft_(draft) {
       try { localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); } catch(e){}
     }
+
     function setDraftValue_(category, itemName, field, value) {
       const draft = loadDraft_();
       if (!draft[category]) draft[category] = {};
@@ -781,22 +871,20 @@ function getDisplayQty_(it){
       draft[category][itemName][field] = value;
       saveDraft_(draft);
     }
+
     function getDraftValue_(category, itemName, field) {
       const draft = loadDraft_();
       return draft?.[category]?.[itemName]?.[field] ?? "";
     }
+
     function clearDraft_(category) {
       const draft = loadDraft_();
       if (draft[category]) delete draft[category];
       saveDraft_(draft);
     }
 
-    // =========================
-    // Data handler (dataSdk)
-    // =========================
     const dataHandler = {
       onDataChanged(data) {
-        // dataSdk จะยิง event เมื่อข้อมูลเปลี่ยน -> ถือว่า real-time ในระบบนี้แล้ว
         allRecords = Array.isArray(data) ? data : [];
         if (!document.getElementById('history-page').classList.contains('hidden')) {
           renderHistory();
@@ -804,14 +892,11 @@ function getDisplayQty_(it){
       }
     };
 
-
-    // ===== Google Sheet History (fallback when dataSdk is unavailable) =====
     let lastSheetSyncAt = 0;
 
     async function fetchHistoryFromSheet_(limit = 300) {
       try {
-        if (typeof GOOGLE_SHEET_WEBAPP_URL !== "string" ||
-            !GOOGLE_SHEET_WEBAPP_URL.startsWith("https://script.google.com/macros/s/")) {
+        if (typeof GOOGLE_SHEET_WEBAPP_URL !== "string" || !GOOGLE_SHEET_WEBAPP_URL.startsWith("https://script.google.com/macros/s/")) {
           return [];
         }
         const url = GOOGLE_SHEET_WEBAPP_URL + "?limit=" + encodeURIComponent(String(limit));
@@ -826,7 +911,6 @@ function getDisplayQty_(it){
     }
 
     async function syncHistoryFromSheet_({ silent = true } = {}) {
-      // avoid hammering
       const now = Date.now();
       if (now - lastSheetSyncAt < 1500) return;
       lastSheetSyncAt = now;
@@ -834,7 +918,6 @@ function getDisplayQty_(it){
       const records = await fetchHistoryFromSheet_(500);
       if (records.length) {
         allRecords = records;
-        // ถ้าตอนนี้อยู่หน้าประวัติ ให้รีเรนเดอร์ทันที
         if (document.getElementById('history-page') && !document.getElementById('history-page').classList.contains('hidden')) {
           renderHistory();
         }
@@ -843,12 +926,6 @@ function getDisplayQty_(it){
       }
     }
 
-
-    // =========================
-    // ✅ Quantity validation/sanitize
-    // ใส่ได้เฉพาะ 0-9 และ . / + -
-    // รองรับแปลงเป็นตัวเลขได้ทั้ง: 10, 10.5, -2, +3, 1/2, -1/2
-    // =========================
     const QTY_ALLOWED_RE = /[0-9.\-+\/]/;
 
     function sanitizeQuantityRaw_(raw) {
@@ -856,7 +933,6 @@ function getDisplayQty_(it){
       for (const ch of String(raw || "")) {
         if (QTY_ALLOWED_RE.test(ch)) out += ch;
       }
-      // จำกัด + - ให้มีได้แค่ตัวแรก
       out = out.replace(/(?!^)[+-]/g, "");
       return out;
     }
@@ -865,19 +941,16 @@ function getDisplayQty_(it){
       const s = String(raw || "").trim();
       if (!s) return { ok: true, value: 0 };
 
-      // number
       if (/^[+-]?\d*(?:\.\d+)?$/.test(s)) {
         const v = Number(s);
         if (Number.isFinite(v)) return { ok: true, value: v };
         return { ok: false, value: 0 };
       }
 
-      // fraction: a/b
       const m = s.match(/^([+-]?\d*(?:\.\d+)?)\s*\/\s*(\d*(?:\.\d+)?)$/);
       if (m) {
         const aStr = m[1];
         const bStr = m[2];
-        // ถ้า a เป็น "" หรือ "+" หรือ "-" ถือว่าไม่ครบ
         if (!aStr || aStr === "+" || aStr === "-") return { ok: false, value: 0 };
         if (!bStr) return { ok: false, value: 0 };
         const a = Number(aStr);
@@ -897,38 +970,16 @@ function getDisplayQty_(it){
       const p = parseQuantity_(el.value);
       el.classList.toggle("qty-invalid", !p.ok && el.value.trim() !== "");
 
-      // draft
       const item = el.getAttribute("data-item");
       setDraftValue_(currentCategory, item, "quantity_raw", el.value);
     }
 
     function onQtyKeyDown_(e) {
-      // อนุญาต: ตัวเลข, ., /, +, -, ปุ่มควบคุม
       const ctrl = ["Backspace","Delete","ArrowLeft","ArrowRight","Tab","Home","End","Enter"];
       if (ctrl.includes(e.key) || e.ctrlKey || e.metaKey) return;
-
       if (!QTY_ALLOWED_RE.test(e.key)) {
         e.preventDefault();
         return;
-      }
-    }
-
-    // =========================
-    // ✅ Google Sheet sync (optional)
-    // =========================
-    async function pushToGoogleSheet_(record) {
-      if (!GOOGLE_SHEET_WEBAPP_URL || GOOGLE_SHEET_WEBAPP_URL.includes("PASTE_YOUR")) return { ok: true, skipped: true };
-      try {
-        const res = await fetch(GOOGLE_SHEET_WEBAPP_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action: "append", record })
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) return { ok: false, error: data?.error || "HTTP " + res.status };
-        return { ok: !!data?.isOk || true, data };
-      } catch (e) {
-        return { ok: false, error: String(e) };
       }
     }
 
@@ -948,12 +999,8 @@ function getDisplayQty_(it){
     async function startSheetPolling_() {
       if (sheetPollTimer) clearInterval(sheetPollTimer);
       if (!GOOGLE_SHEET_WEBAPP_URL || GOOGLE_SHEET_WEBAPP_URL.includes("PASTE_YOUR")) return;
-      // ดึงทันที 1 ครั้ง
       const initial = await fetchFromGoogleSheet_();
-      if (initial && initial.length) {
-        // รวมกับของเดิม (เอา id เป็นตัวตัดซ้ำ)
-        mergeRecords_(initial);
-      }
+      if (initial && initial.length) mergeRecords_(initial);
       sheetPollTimer = setInterval(async () => {
         const recs = await fetchFromGoogleSheet_();
         if (recs && recs.length) mergeRecords_(recs);
@@ -961,7 +1008,6 @@ function getDisplayQty_(it){
     }
 
     function mergeRecords_(incoming) {
-      // incoming อาจมีรูปแบบ {id, category, checker_name, date, items, created_at}
       const byId = new Map((allRecords || []).map(r => [String(r.id || r.__backendId || ""), r]));
       for (const r of incoming) {
         const k = String(r.id || r.__backendId || "");
@@ -974,14 +1020,8 @@ function getDisplayQty_(it){
       }
     }
 
-    // =========================
-    // Language
-    // =========================
-
     function setLanguage(lang) {
       currentLanguage = lang;
-
-      // Remember Thai only (always default back to Thai on reload)
       if (lang === 'th') localStorage.setItem('lang', 'th');
       else localStorage.removeItem('lang');
 
@@ -991,7 +1031,6 @@ function getDisplayQty_(it){
       updateLanguage();
       rerenderVisiblePages();
     }
-
 
     function updateLanguage() {
       const t = translations[currentLanguage];
@@ -1035,18 +1074,13 @@ function getDisplayQty_(it){
         const stockPage = document.getElementById('stock-page');
         const historyPage = document.getElementById('history-page');
         const detailPage = document.getElementById('history-detail-page');
-        if (stockPage && !stockPage.classList.contains('hidden')) {
-          renderStockTable();
-        }
-        if (historyPage && !historyPage.classList.contains('hidden')) {
-          loadHistory();
-        }
+        if (stockPage && !stockPage.classList.contains('hidden')) renderStockTable();
+        if (historyPage && !historyPage.classList.contains('hidden')) renderHistory();
         if (detailPage && !detailPage.classList.contains('hidden') && window.__currentDetailRecord) {
           showHistoryDetail(window.__currentDetailRecord);
         }
-      } catch (e) { /* ignore */ }
+      } catch (e) {}
     }
-
 
     function formatDate(date, lang) {
       const options = { day: '2-digit', month: '2-digit', year: 'numeric' };
@@ -1059,20 +1093,13 @@ function getDisplayQty_(it){
     }
 
     function getPreviousRecord(category, currentDate) {
-      // หา "รายการก่อนหน้า" ของหมวดเดียวกัน โดยอิงจากวันที่ของรายการที่กำลังเปิดอยู่
-      // (ไม่ใช่เอาอันล่าสุด/รองล่าสุดของทั้งหมวดแบบตายตัว)
       const curr = currentDate ? new Date(currentDate).getTime() : null;
-
       const filtered = (allRecords || [])
         .filter(r => r.category === category)
         .sort((a, b) => new Date(b.date) - new Date(a.date));
 
       if (!filtered.length) return null;
-
-      // ถ้าไม่ส่ง currentDate มา ให้ใช้ตรรกะเดิม (รองล่าสุด)
       if (!curr) return filtered.length > 1 ? filtered[1] : null;
-
-      // หาตัวที่เก่ากว่า currentDate ที่ใกล้ที่สุด
       const prev = filtered.find(r => new Date(r.date).getTime() < curr);
       return prev || null;
     }
@@ -1082,9 +1109,6 @@ function getDisplayQty_(it){
       return items.find(i => i.name === itemName);
     }
 
-    // =========================
-    // Initialize
-    // =========================
     async function init() {
       const today = new Date();
       document.getElementById('current-date').textContent = formatDate(today, currentLanguage);
@@ -1093,7 +1117,6 @@ function getDisplayQty_(it){
       const result = (window.dataSdk && typeof window.dataSdk.init==="function" ? await window.dataSdk.init(dataHandler) : {isOk:false});
       if (!result.isOk) console.error('Failed to initialize data SDK');
 
-      // Sheet polling (optional)
       startSheetPolling_();
 
       if (window.elementSdk) {
@@ -1121,12 +1144,9 @@ function getDisplayQty_(it){
         });
       }
 
-      
-
-      // ดึงประวัติจาก Google Sheet (กรณีเปิดไฟล์แบบ file:// หรือไม่มี dataSdk)
       await syncHistoryFromSheet_({ silent: true });
       setInterval(() => { syncHistoryFromSheet_({ silent: true }); }, 8000);
-updateLanguage();
+      updateLanguage();
     }
 
     function showPage(pageId) {
@@ -1140,13 +1160,12 @@ updateLanguage();
 
     function selectCategory(category) {
       currentCategory = category;
-
       const badge = document.getElementById('category-badge');
       const colors = { 'หน้าเรือ': 'bg-orange-500', 'อาหารตามสั่ง': 'bg-emerald-500', 'เด็กเสิร์ฟ': 'bg-blue-500' };
       const icons = { 'หน้าเรือ': '🚣', 'อาหารตามสั่ง': '🍳', 'เด็กเสิร์ฟ': '🧑‍🍳' };
 
       badge.className = `inline-flex items-center gap-2 px-4 py-2 rounded-full text-white text-sm font-medium mb-4 ${colors[category]}`;
-      badge.innerHTML = `${icons[category]} ${category}`;
+      badge.innerHTML = `${icons[category]} ${tCategory(category)}`;
 
       document.getElementById('checker-name').value = '';
       showPage('name-page');
@@ -1162,7 +1181,6 @@ updateLanguage();
       document.getElementById('checker-name').classList.remove('border-red-500');
 
       checkerName = name;
-
       document.getElementById('display-checker-name').textContent = checkerName;
       const today = new Date();
       document.getElementById('display-date').textContent = formatDate(today, currentLanguage);
@@ -1170,7 +1188,7 @@ updateLanguage();
       const badge = document.getElementById('stock-category-badge');
       const colors = { 'หน้าเรือ': 'bg-orange-500', 'อาหารตามสั่ง': 'bg-emerald-500', 'เด็กเสิร์ฟ': 'bg-blue-500' };
       badge.className = `px-4 py-2 rounded-full text-white text-sm font-medium ${colors[currentCategory]}`;
-      badge.textContent = currentCategory;
+      badge.textContent = tCategory(currentCategory);
 
       renderStockTable();
       showPage('stock-page');
@@ -1179,7 +1197,6 @@ updateLanguage();
     function renderStockTable() {
       const tbody = document.getElementById('stock-table-body');
       const items = stockItems[currentCategory] || [];
-
       let html = '';
       let index = 0;
 
@@ -1194,22 +1211,21 @@ updateLanguage();
         } else {
           const draftQty = getDraftValue_(currentCategory, item.name, "quantity_raw");
           const draftNote = getDraftValue_(currentCategory, item.name, "note");
+          const unitSelected = getDraftValue_(currentCategory, item.name, "unit") || (item.unit || "");
+          const unitOptions = getUnitOptions_(item) || [item.unit || ""];
+          let unitHtml = "";
 
-const unitSelected = getDraftValue_(currentCategory, item.name, "unit") || (item.unit || "");
-const unitOptions = getUnitOptions_(item) || [item.unit || ""];
-let unitHtml = "";
-if (item.unit === "") {
-  unitHtml = "";
-} else if (unitOptions.length > 1) {
-  unitHtml = `<select class="w-24 px-2 py-1 border border-gray-300 rounded-lg text-sm bg-white"
+          if (item.unit === "") {
+            unitHtml = "";
+          } else if (unitOptions.length > 1) {
+            unitHtml = `<select class="w-24 px-2 py-1 border border-gray-300 rounded-lg text-sm bg-white"
                       data-item="${item.name}" data-field="unit"
                       onchange="setDraftValue_(currentCategory, this.getAttribute('data-item'), 'unit', this.value); markDirty_(); validateForm_();">
                 ${unitOptions.map(u => `<option value="${u}" ${u===unitSelected?'selected':''}>${tUnit(u)}</option>`).join('')}
               </select>`;
-} else {
-  unitHtml = `<span class="text-gray-600">${tUnit(unitSelected || item.unit || "")}</span>`;
-}
-
+          } else {
+            unitHtml = `<span class="text-gray-600">${tUnit(unitSelected || item.unit || "")}</span>`;
+          }
 
           html += `
             <tr class="slide-in hover:bg-orange-50 transition-colors" style="animation-delay: ${index * 30}ms">
@@ -1245,172 +1261,159 @@ if (item.unit === "") {
       });
 
       tbody.innerHTML = html;
-
-      // validate existing draft
       document.querySelectorAll('input[data-field="quantity_raw"]').forEach(el => sanitizeQuantityInput(el));
     }
 
     async function saveStock() {
-  const btn = document.getElementById('save-btn');
-  const originalBtnHtml = btn.innerHTML;
+      const btn = document.getElementById('save-btn');
+      const originalBtnHtml = btn.innerHTML;
 
-  const disableBtn_ = () => {
-    btn.disabled = true;
-    btn.innerHTML = `
-      <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
-      ${translations[currentLanguage].save}
-    `;
-  };
-
-  const enableBtn_ = () => {
-    btn.disabled = false;
-    btn.innerHTML = originalBtnHtml;
-  };
-
-  const withTimeout_ = (promise, ms, label) =>
-    Promise.race([
-      promise,
-      new Promise((_, reject) => setTimeout(() => reject(new Error(label || "TIMEOUT")), ms))
-    ]);
-
-  disableBtn_();
-
-  try {
-    const items = stockItems[currentCategory] || [];
-
-    // validate quantities
-    const missingEls = [];
-    const invalidEls = [];
-    const stockEntries = items.map(item => {
-      // skip section headers
-      if (!item.unit) return { __section: true, name: item.name, unit: item.unit };
-
-      const qtyEl = document.querySelector(`input[data-item="${item.name}"][data-field="quantity_raw"]`);
-      const noteEl = document.querySelector(`input[data-item="${item.name}"][data-field="note"]`);
-
-      const raw = qtyEl ? qtyEl.value.trim() : "";
-      const parsed = parseQuantity_(raw);
-
-      // ต้องกรอก "จำนวน" ให้ครบทุกช่อง (ใส่ 0 ได้ แต่ห้ามปล่อยว่าง)
-      if (qtyEl && raw === "") {
-        missingEls.push(qtyEl);
-      } else if (qtyEl && !parsed.ok) {
-        invalidEls.push(qtyEl);
-      }
-
-      // unit: prefer dropdown if present (Thai value)
-      const unitSelectEl = Array.from(document.querySelectorAll('select[data-field="unit"]'))
-        .find(el => el && el.dataset && el.dataset.item === item.name);
-      const unitInput = (unitSelectEl ? unitSelectEl.value : null)
-        || getDraftValue_(currentCategory, item.name, "unit")
-        || (item.unit || "");
-      const qtyNum = parsed.ok ? parsed.value : 0;
-      const unitOptions = getUnitOptions_(item) || [String(item.unit || '').trim()];
-      const norm = normalizeQtyToBase_(qtyNum, unitInput, unitOptions);
-      const quantity_base = norm.qty;
-      const unitSaved = norm.unit;
-
-      return {
-        name: item.name,          // Thai only (ส่งขึ้นชีท)
-        unit: unitSaved,          // unit ที่บันทึก
-        unit_input: unitInput,    // unit ที่พนักงานเลือก
-        unit_group: String(item.unit || '').trim(),
-        unit_options: unitOptions,
-        quantity_raw: raw,
-        quantity: quantity_base,    // บันทึกเป็นหน่วยฐานอัตโนมัติ
-        quantity_base: quantity_base, // สำหรับ history
-        note: noteEl ? noteEl.value.trim() : ""
+      const disableBtn_ = () => {
+        btn.disabled = true;
+        btn.innerHTML = `
+          <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          ${translations[currentLanguage].save}
+        `;
       };
-    }).filter(x => !x.__section);
 
-    if (missingEls.length) {
-      missingEls.forEach(el => el.classList.add("border-red-500"));
-      missingEls[0].scrollIntoView({ behavior: "smooth", block: "center" });
-      showToast("กรุณากรอกจำนวนให้ครบทุกช่อง (ใส่ 0 ได้ แต่ห้ามปล่อยว่าง)", "error");
-      return;
-    }
+      const enableBtn_ = () => {
+        btn.disabled = false;
+        btn.innerHTML = originalBtnHtml;
+      };
 
-    if (invalidEls.length) {
-      invalidEls.forEach(el => el.classList.add("border-red-500"));
-      invalidEls[0].scrollIntoView({ behavior: "smooth", block: "center" });
-      showToast("รูปแบบจำนวนไม่ถูกต้อง (อนุญาต 0-9 และ . / + -)", "error");
-      return;
-    }
+      const withTimeout_ = (promise, ms, label) =>
+        Promise.race([
+          promise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error(label || "TIMEOUT")), ms))
+        ]);
 
-    if (allRecords.length >= 999) {
-      showToast(translations[currentLanguage].fullLimit, 'error');
-      return;
-    }
+      disableBtn_();
 
-    const nowIso = new Date().toISOString();
-    const record = {
-      id: Date.now().toString(),
-      category: currentCategory,
-      checker_name: checkerName,
-      date: nowIso,
-      items: JSON.stringify(stockEntries),
-      created_at: nowIso
-    };
+      try {
+        const items = stockItems[currentCategory] || [];
+        const missingEls = [];
+        const invalidEls = [];
 
-    // 1) Save to Canva dataSdk (if available)
-    let canvaOk = false;
-    try {
-      if (window.dataSdk && typeof window.dataSdk.create === "function") {
-        const r = await withTimeout_(window.dataSdk.create(record), 15000, "DATA_SDK_TIMEOUT");
-        canvaOk = !!(r && r.isOk);
-      }
-    } catch (e) {
-      console.warn("dataSdk.create failed:", e);
-    }
+        const stockEntries = items.map(item => {
+          if (!item.unit) return { __section: true, name: item.name, unit: item.unit };
 
-    // 2) Save to Google Sheet (if URL configured)
-    let sheetOk = false;
-    try {
-      if (typeof GOOGLE_SHEET_WEBAPP_URL === "string" &&
-          GOOGLE_SHEET_WEBAPP_URL.startsWith("https://script.google.com/macros/s/")) {
+          const qtyEl = document.querySelector(`input[data-item="${item.name}"][data-field="quantity_raw"]`);
+          const noteEl = document.querySelector(`input[data-item="${item.name}"][data-field="note"]`);
 
-        // add backendId if canva returns one later; for now generate locally
-        const payload = {
-          __backendId: "web-" + Date.now().toString(),
-          ...record
+          const raw = qtyEl ? qtyEl.value.trim() : "";
+          const parsed = parseQuantity_(raw);
+
+          if (qtyEl && raw === "") missingEls.push(qtyEl);
+          else if (qtyEl && !parsed.ok) invalidEls.push(qtyEl);
+
+          const unitSelectEl = Array.from(document.querySelectorAll('select[data-field="unit"]'))
+            .find(el => el && el.dataset && el.dataset.item === item.name);
+          const unitInput = (unitSelectEl ? unitSelectEl.value : null)
+            || getDraftValue_(currentCategory, item.name, "unit")
+            || (item.unit || "");
+          const qtyNum = parsed.ok ? parsed.value : 0;
+          const unitOptions = getUnitOptions_(item) || [String(item.unit || '').trim()];
+          const norm = normalizeQtyToBase_(qtyNum, unitInput, unitOptions);
+
+          return {
+            name: item.name,
+            unit: norm.unit,
+            unit_input: unitInput,
+            unit_group: String(item.unit || '').trim(),
+            unit_options: unitOptions,
+            quantity_raw: raw,
+            quantity: norm.qty,
+            quantity_base: norm.qty,
+            note: noteEl ? noteEl.value.trim() : ""
+          };
+        }).filter(x => !x.__section);
+
+        if (missingEls.length) {
+          missingEls.forEach(el => el.classList.add("border-red-500"));
+          missingEls[0].scrollIntoView({ behavior: "smooth", block: "center" });
+          showToast("กรุณากรอกจำนวนให้ครบทุกช่อง (ใส่ 0 ได้ แต่ห้ามปล่อยว่าง)", "error");
+          return;
+        }
+
+        if (invalidEls.length) {
+          invalidEls.forEach(el => el.classList.add("border-red-500"));
+          invalidEls[0].scrollIntoView({ behavior: "smooth", block: "center" });
+          showToast("รูปแบบจำนวนไม่ถูกต้อง (อนุญาต 0-9 และ . / + -)", "error");
+          return;
+        }
+
+        if (allRecords.length >= 999) {
+          showToast(translations[currentLanguage].fullLimit, 'error');
+          return;
+        }
+
+        const nowIso = new Date().toISOString();
+        const record = {
+          id: Date.now().toString(),
+          category: currentCategory,
+          checker_name: checkerName,
+          date: nowIso,
+          items: JSON.stringify(stockEntries),
+          created_at: nowIso
         };
 
-        const resp = await withTimeout_(fetch(GOOGLE_SHEET_WEBAPP_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) }), 15000, "SHEET_POST_TIMEOUT");
+        let canvaOk = false;
+        try {
+          if (window.dataSdk && typeof window.dataSdk.create === "function") {
+            const r = await withTimeout_(window.dataSdk.create(record), 15000, "DATA_SDK_TIMEOUT");
+            canvaOk = !!(r && r.isOk);
+          }
+        } catch (e) {
+          console.warn("dataSdk.create failed:", e);
+        }
 
-        // Apps Script อาจคืน 302/200/0 ในบางสภาพแวดล้อม → ถือว่าผ่านถ้า fetch ไม่ throw
-        sheetOk = !!resp;
+        let sheetOk = false;
+        try {
+          if (typeof GOOGLE_SHEET_WEBAPP_URL === "string" &&
+              GOOGLE_SHEET_WEBAPP_URL.startsWith("https://script.google.com/macros/s/")) {
+            const payload = {
+              __backendId: "web-" + Date.now().toString(),
+              ...record
+            };
+            const resp = await withTimeout_(
+              fetch(GOOGLE_SHEET_WEBAPP_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify(payload)
+              }),
+              15000,
+              "SHEET_POST_TIMEOUT"
+            );
+            sheetOk = !!resp;
+          }
+        } catch (e) {
+          console.warn("sheet POST failed:", e);
+        }
+
+        if (canvaOk || sheetOk) {
+          clearDraft_(currentCategory);
+          showToast(translations[currentLanguage].saved, 'success');
+          setTimeout(() => goHome(), 800);
+        } else {
+          showToast(translations[currentLanguage].error + " (บันทึกไม่สำเร็จ)", 'error');
+        }
+      } catch (err) {
+        console.error(err);
+        showToast(translations[currentLanguage].error, 'error');
+      } finally {
+        enableBtn_();
       }
-    } catch (e) {
-      console.warn("sheet POST failed:", e);
     }
-
-    if (canvaOk || sheetOk) {
-      // clear draft for this category
-      clearDraft_(currentCategory);
-      showToast(translations[currentLanguage].saved, 'success');
-      setTimeout(() => goHome(), 800);
-    } else {
-      showToast(translations[currentLanguage].error + " (บันทึกไม่สำเร็จ)", 'error');
-    }
-  } catch (err) {
-    console.error(err);
-    showToast(translations[currentLanguage].error, 'error');
-  } finally {
-    enableBtn_();
-  }
-}
-
 
     function showToast(message, type = 'success') {
       const toast = document.getElementById('toast');
       const msgEl = document.getElementById('toast-message');
       msgEl.textContent = message;
-
       toast.className = `fixed bottom-4 left-1/2 transform -translate-x-1/2 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-2 transition-all duration-300`;
-
       setTimeout(() => { toast.classList.add('hidden'); }, 3000);
     }
 
@@ -1419,6 +1422,7 @@ if (item.unit === "") {
       syncHistoryFromSheet_({ silent: true });
       renderHistory();
     }
+
     function filterHistory() { renderHistory(); }
 
     function renderHistory() {
@@ -1435,7 +1439,6 @@ if (item.unit === "") {
       }
 
       if (filterCategory) filtered = filtered.filter(r => r.category === filterCategory);
-
       filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
 
       const listEl = document.getElementById('history-list');
@@ -1475,10 +1478,11 @@ if (item.unit === "") {
       const record = (allRecords || []).find(r => (r.__backendId || r.id) === idOrBackendId);
       if (!record) return;
 
+      window.__currentDetailRecord = idOrBackendId;
+
       const items = JSON.parse(record.items || '[]');
       const previousRecord = getPreviousRecord(record.category, record.date);
       const t = translations[currentLanguage];
-
       const colors = { 'หน้าเรือ': 'from-orange-500 to-orange-600', 'อาหารตามสั่ง': 'from-emerald-500 to-emerald-600', 'เด็กเสิร์ฟ': 'from-blue-500 to-blue-600' };
 
       const content = document.getElementById('history-detail-content');
@@ -1539,7 +1543,7 @@ if (item.unit === "") {
                 return `
                   <tr class="hover:bg-gray-50">
                     <td class="px-4 py-3 font-medium text-gray-800">${tItem(item.name)}</td>
-                    <td class="px-4 py-3 text-center font-semibold ${(item.quantity || 0) > 0 ? 'text-green-600' : 'text-red-500'}">${(item.quantity ?? 0)}</td>
+                    <td class="px-4 py-3 text-center font-semibold ${(item.quantity || 0) > 0 ? 'text-green-600' : 'text-red-500'}">${item.quantity ?? 0}</td>
                     <td class="px-4 py-3 text-center text-gray-600">${tUnit(getDisplayUnit_(item))}</td>
                     ${comparison}
                     <td class="px-4 py-3 text-gray-500">${item.note || '-'}</td>
@@ -1557,7 +1561,6 @@ if (item.unit === "") {
     init();
   </script>
 
-  <!-- original cloudflare snippet preserved -->
   <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9cc1f7c8006f45ab',t:'MTc3MDc5MzIxMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
