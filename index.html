@@ -829,6 +829,18 @@
       return s;
     }
 
+    function shouldCeilDisplayByUnit_(unit){
+      const u = String(unit || "").trim();
+      return u !== "กรัม" && u !== "กิโลกรัม";
+    }
+
+    function applyDisplayRounding_(qty, unit){
+      const n = Number(qty);
+      if (!isFinite(n)) return qty;
+      if (!shouldCeilDisplayByUnit_(unit)) return n;
+      return Math.ceil(n);
+    }
+
     function getDisplayQty_(it){
       const qtyRaw = (it && it.quantity !== undefined && it.quantity !== null) ? it.quantity : "";
       const meta = (it && it.name) ? (ITEM_META_BY_NAME[it.name] || null) : null;
@@ -836,7 +848,7 @@
       const unitOptions = getUnitOptions_({ name: it?.name || "", unit: unitDef });
       const unitSelected = (it && it.unit) ? String(it.unit).trim() : "";
       const normalized = normalizeQtyToBase_(qtyRaw, unitSelected, unitOptions);
-      return normalized.qty;
+      return applyDisplayRounding_(normalized.qty, normalized.unit);
     }
 
     let currentCategory = '';
@@ -1540,11 +1552,14 @@
                   }
                 }
 
+                const displayQty = getDisplayQty_(item);
+                const displayUnit = getDisplayUnit_(item);
+
                 return `
                   <tr class="hover:bg-gray-50">
                     <td class="px-4 py-3 font-medium text-gray-800">${tItem(item.name)}</td>
-                    <td class="px-4 py-3 text-center font-semibold ${(item.quantity || 0) > 0 ? 'text-green-600' : 'text-red-500'}">${item.quantity ?? 0}</td>
-                    <td class="px-4 py-3 text-center text-gray-600">${tUnit(getDisplayUnit_(item))}</td>
+                    <td class="px-4 py-3 text-center font-semibold ${Number(displayQty || 0) > 0 ? 'text-green-600' : 'text-red-500'}">${fmtQty(displayQty)}</td>
+                    <td class="px-4 py-3 text-center text-gray-600">${tUnit(displayUnit)}</td>
                     ${comparison}
                     <td class="px-4 py-3 text-gray-500">${item.note || '-'}</td>
                   </tr>
