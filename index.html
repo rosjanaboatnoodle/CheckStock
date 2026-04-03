@@ -819,37 +819,48 @@
       return normalized.unit || unitSelected || unitDef || "";
     }
 
-    function fmtQty(v){
-      if (v === null || v === undefined) return "";
-      if (typeof v === "string" && v.trim() === "") return "";
-      const n = Number(v);
-      if (!isFinite(n)) return String(v);
-      let s = (Math.round(n * 1000) / 1000).toString();
-      if (s.indexOf(".") >= 0) s = s.replace(/\.0+$/,"").replace(/(\.\d*[1-9])0+$/,"$1");
-      return s;
-    }
+function fmtQty(v){
+  if (v === null || v === undefined) return "";
+  if (typeof v === "string" && v.trim() === "") return "";
+
+  const n = Number(v);
+  if (!isFinite(n)) return String(v);
+
+  // แสดงทศนิยมสูงสุด 2 ตำแหน่ง
+  let s = n.toFixed(2);
+
+  // ตัด .00 หรือ 0 ท้าย
+  s = s.replace(/\.00$/, "").replace(/(\.\d)0$/, "$1");
+
+  return s;
+}
 
     function shouldCeilDisplayByUnit_(unit){
       const u = String(unit || "").trim();
       return u !== "กรัม" && u !== "กิโลกรัม";
     }
 
-    function applyDisplayRounding_(qty, unit){
-      const n = Number(qty);
-      if (!isFinite(n)) return qty;
-      if (!shouldCeilDisplayByUnit_(unit)) return n;
-      return Math.ceil(n);
-    }
+function applyDisplayRounding_(qty){
+  const n = Number(qty);
+  if (!isFinite(n)) return qty;
 
-    function getDisplayQty_(it){
-      const qtyRaw = (it && it.quantity !== undefined && it.quantity !== null) ? it.quantity : "";
-      const meta = (it && it.name) ? (ITEM_META_BY_NAME[it.name] || null) : null;
-      const unitDef = meta ? (meta.defaultUnit || "") : "";
-      const unitOptions = getUnitOptions_({ name: it?.name || "", unit: unitDef });
-      const unitSelected = (it && it.unit) ? String(it.unit).trim() : "";
-      const normalized = normalizeQtyToBase_(qtyRaw, unitSelected, unitOptions);
-      return applyDisplayRounding_(normalized.qty, normalized.unit);
-    }
+  // ปัดแบบมาตรฐาน + กัน floating point error (เช่น 0.255)
+  return Math.round((n + Number.EPSILON) * 100) / 100;
+}
+
+function getDisplayQty_(it){
+  const qtyRaw = (it && it.quantity !== undefined && it.quantity !== null) ? it.quantity : "";
+
+  const meta = (it && it.name) ? (ITEM_META_BY_NAME[it.name] || null) : null;
+  const unitDef = meta ? (meta.defaultUnit || "") : "";
+
+  const unitOptions = getUnitOptions_({ name: it?.name || "", unit: unitDef });
+  const unitSelected = (it && it.unit) ? String(it.unit).trim() : "";
+
+  const normalized = normalizeQtyToBase_(qtyRaw, unitSelected, unitOptions);
+
+  return applyDisplayRounding_(normalized.qty);
+}
 
     let currentCategory = '';
     let checkerName = '';
