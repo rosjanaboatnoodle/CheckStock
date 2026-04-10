@@ -1472,13 +1472,6 @@ function getDisplayQty_(it){
       }
     }
 
-    function showToast(message, type = 'success') {
-      const toast = document.getElementById('toast');
-      const msgEl = document.getElementById('toast-message');
-      msgEl.textContent = message;
-      toast.className = `fixed bottom-4 left-1/2 transform -translate-x-1/2 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-2 transition-all duration-300`;
-      setTimeout(() => { toast.classList.add('hidden'); }, 3000);
-    }
 
   function showToast(message, type = 'success') {
       const toast = document.getElementById('toast');
