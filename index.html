@@ -238,7 +238,7 @@
   </div>
 
   <script>
-    const GOOGLE_SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbzJn9-Q0KjBoDFHYu3LhlTYUhiDduXFxYpriLwPjKrcULvU7rujGplHyLG9xZjQDF-bSA/exec";
+    const GOOGLE_SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycby62v3iNgwZCPLG7dJtx5HBkGQ64v571d9XGotVZP8SfNNmY1ZNLdn96ZCeyIUYDA-Dcw/exec";
     const SHEET_POLL_MS = 10000;
 
     let currentLanguage = 'th';
@@ -1480,149 +1480,122 @@ function getDisplayQty_(it){
       setTimeout(() => { toast.classList.add('hidden'); }, 3000);
     }
 
-    function showHistory() {
-      showPage('history-page');
-      syncHistoryFromSheet_({ silent: true });
-      renderHistory();
-    }
+// ===== FIX HISTORY (JSONP) =====
 
-    function filterHistory() { renderHistory(); }
+let historyData = [];
 
-    function renderHistory() {
-      const filterDate = document.getElementById('filter-date').value;
-      const filterCategory = document.getElementById('filter-category').value;
+function loadJSONP(url, callbackName) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    const sep = url.includes('?') ? '&' : '?';
 
-      let filtered = [...(allRecords || [])];
+    script.src = `${url}${sep}callback=${callbackName}&_=${Date.now()}`;
 
-      if (filterDate) {
-        filtered = filtered.filter(r => {
-          const recordDate = new Date(r.date).toISOString().split('T')[0];
-          return recordDate === filterDate;
-        });
-      }
+    window[callbackName] = function (data) {
+      delete window[callbackName];
+      document.body.removeChild(script);
+      resolve(data);
+    };
 
-      if (filterCategory) filtered = filtered.filter(r => r.category === filterCategory);
-      filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+    script.onerror = function () {
+      delete window[callbackName];
+      document.body.removeChild(script);
+      reject(new Error('JSONP failed'));
+    };
 
-      const listEl = document.getElementById('history-list');
-      const noHistory = document.getElementById('no-history');
+    document.body.appendChild(script);
+  });
+}
 
-      if (filtered.length === 0) {
-        listEl.innerHTML = '';
-        noHistory.classList.remove('hidden');
-        return;
-      }
+async function fetchHistoryFromSheet_() {
+  const cb = "cb_" + Date.now();
 
-      noHistory.classList.add('hidden');
+  const res = await loadJSONP(
+    GOOGLE_SHEET_WEBAPP_URL + "?action=list",
+    cb
+  );
 
-      const colors = { 'หน้าเรือ': 'from-orange-500 to-orange-600', 'อาหารตามสั่ง': 'from-emerald-500 to-emerald-600', 'เด็กเสิร์ฟ': 'from-blue-500 to-blue-600' };
-      const icons = { 'หน้าเรือ': '🚣', 'อาหารตามสั่ง': '🍳', 'เด็กเสิร์ฟ': '🧑‍🍳' };
+  if (!res || !res.ok) throw new Error("โหลดไม่สำเร็จ");
 
-      listEl.innerHTML = filtered.map(record => `
-        <div onclick="showHistoryDetail('${record.__backendId || record.id}')" class="bg-white rounded-xl p-4 shadow-md hover:shadow-lg transition-all cursor-pointer">
-          <div class="flex items-center gap-4">
-            <div class="w-12 h-12 bg-gradient-to-br ${colors[record.category]} rounded-xl flex items-center justify-center text-2xl">
-              ${icons[record.category]}
-            </div>
-            <div class="flex-1">
-              <p class="font-semibold text-gray-800">${tCategory(record.category)}</p>
-              <p class="text-sm text-gray-500">${translations[currentLanguage].staffChecker} ${record.checker_name}</p>
-              <p class="text-sm text-gray-400">${formatFullDate(record.date, currentLanguage)}</p>
-            </div>
-            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-            </svg>
-          </div>
-        </div>
-      `).join('');
-    }
+  return res.records || [];
+}
 
-    function showHistoryDetail(idOrBackendId) {
-      const record = (allRecords || []).find(r => (r.__backendId || r.id) === idOrBackendId);
-      if (!record) return;
+async function showHistory() {
+  showPage('history-page');
 
-      window.__currentDetailRecord = idOrBackendId;
+  const list = document.getElementById('history-list');
+  list.innerHTML = "กำลังโหลด...";
 
-      const items = JSON.parse(record.items || '[]');
-      const previousRecord = getPreviousRecord(record.category, record.date);
-      const t = translations[currentLanguage];
-      const colors = { 'หน้าเรือ': 'from-orange-500 to-orange-600', 'อาหารตามสั่ง': 'from-emerald-500 to-emerald-600', 'เด็กเสิร์ฟ': 'from-blue-500 to-blue-600' };
+  try {
+    historyData = await fetchHistoryFromSheet_();
+    filterHistory();
+  } catch (e) {
+    list.innerHTML = "โหลดประวัติไม่สำเร็จ";
+  }
+}
 
-      const content = document.getElementById('history-detail-content');
-      content.innerHTML = `
-        <div class="bg-gradient-to-r ${colors[record.category]} p-4 text-white">
-          <h3 class="text-xl font-bold mb-2">${tCategory(record.category)}</h3>
-          <p class="text-sm opacity-90">${t.staffChecker} <span class="font-semibold">${record.checker_name}</span></p>
-          <p class="text-sm opacity-90">${t.date} <span class="font-semibold">${formatFullDate(record.date, currentLanguage)}</span></p>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">${t.item}</th>
-                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">${t.quantity}</th>
-                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">${t.unit}</th>
-                ${previousRecord ? `<th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">${t.compared}<br><span class="text-xs font-normal">${formatDate(previousRecord.date, currentLanguage)}</span></th>
-                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">${t.changeLabel}</th>
-                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">${t.changePctLabel}</th>` : ''}
-                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">${t.note}</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-              ${items.map(item => {
-                let comparison = '';
-                let trend = '';
-                if (previousRecord) {
-                  const prevItem = getItemFromRecord(previousRecord, item.name);
-                  if (prevItem) {
-                    const curBase = getComparableQty_(item);
-                    const prevBase = getComparableQty_(prevItem);
-                    const diff = curBase - prevBase;
+function filterHistory() {
+  const date = document.getElementById('filter-date').value;
+  const cat = document.getElementById('filter-category').value;
 
-                    if (diff > 0) trend = `<span class="trend-up">⬆ +${fmtQty(diff)}</span>`;
-                    else if (diff < 0) trend = `<span class="trend-down">⬇ ${fmtQty(diff)}</span>`;
-                    else trend = `<span class="trend-neutral">- ${t.noChange}</span>`;
+  let data = [...historyData];
 
-                    let pctHtml = `<span class="text-gray-400">-</span>`;
-                    if (prevBase > 0) {
-                      const pct = (diff / prevBase) * 100;
-                      const sign = pct > 0 ? "+" : "";
-                      const cls = pct > 0 ? "trend-up" : (pct < 0 ? "trend-down" : "trend-neutral");
-                      pctHtml = `<span class="${cls}">${sign}${pct.toFixed(1)}%</span>`;
-                    } else if (prevBase === 0 && curBase !== 0) {
-                      pctHtml = `<span class="text-xs text-blue-600">${t.noPrevious}</span>`;
-                    }
+  if (date) {
+    data = data.filter(r => (r.date || "").includes(date));
+  }
 
-                    comparison = `<td class="px-4 py-3 text-center font-semibold text-gray-600">${fmtQty(getDisplayQty_(prevItem))} ${tUnit(getDisplayUnit_(prevItem))}</td>
-                                  <td class="px-4 py-3 text-center font-semibold">${trend}</td>
-                                  <td class="px-4 py-3 text-center font-semibold">${pctHtml}</td>`;
-                  } else {
-                    comparison = `<td class="px-4 py-3 text-center text-gray-400">-</td>
-                                  <td class="px-4 py-3 text-center"><span class="text-xs text-blue-600">${t.noPrevious}</span></td>
-                                  <td class="px-4 py-3 text-center"><span class="text-gray-400">-</span></td>`;
-                  }
-                }
+  if (cat) {
+    data = data.filter(r => r.category === cat);
+  }
 
-                const displayQty = getDisplayQty_(item);
-                const displayUnit = getDisplayUnit_(item);
+  renderHistoryList(data);
+}
 
-                return `
-                  <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-3 font-medium text-gray-800">${tItem(item.name)}</td>
-                    <td class="px-4 py-3 text-center font-semibold ${Number(displayQty || 0) > 0 ? 'text-green-600' : 'text-red-500'}">${fmtQty(displayQty)}</td>
-                    <td class="px-4 py-3 text-center text-gray-600">${tUnit(displayUnit)}</td>
-                    ${comparison}
-                    <td class="px-4 py-3 text-gray-500">${item.note || '-'}</td>
-                  </tr>
-                `;
-              }).join('')}
-            </tbody>
-          </table>
-        </div>
-      `;
+function renderHistoryList(data) {
+  const list = document.getElementById('history-list');
+  const no = document.getElementById('no-history');
 
-      showPage('history-detail-page');
-    }
+  if (!data.length) {
+    list.innerHTML = "";
+    no.classList.remove('hidden');
+    return;
+  }
+
+  no.classList.add('hidden');
+
+  list.innerHTML = data.reverse().map((r, i) => `
+    <div onclick="showHistoryDetail(${i})"
+      class="bg-white p-4 rounded-xl shadow cursor-pointer">
+      <b>${r.category}</b><br>
+      ${r.checker_name}<br>
+      ${r.date}
+    </div>
+  `).join('');
+}
+
+function showHistoryDetail(i) {
+  const r = historyData[i];
+  if (!r) return;
+
+  showPage('history-detail-page');
+
+  let items = [];
+  try { items = JSON.parse(r.items_json); } catch {}
+
+  document.getElementById('history-detail-content').innerHTML = `
+    <div class="p-4 bg-orange-500 text-white">
+      ${r.category}<br>
+      ${r.checker_name}<br>
+      ${r.date}
+    </div>
+
+    <div class="p-4">
+      ${items.map(it => `
+        <div>${it.name} : ${it.quantity || it.quantity_raw} ${it.unit}</div>
+      `).join('')}
+    </div>
+  `;
+}
 
     init();
   </script>
