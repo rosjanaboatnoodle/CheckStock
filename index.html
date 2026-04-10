@@ -1473,160 +1473,251 @@ function getDisplayQty_(it){
     }
 
 
-  function showToast(message, type = 'success') {
-      const toast = document.getElementById('toast');
-      const msgEl = document.getElementById('toast-message');
-      msgEl.textContent = message;
-      toast.className = `fixed bottom-4 left-1/2 transform -translate-x-1/2 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-2 transition-all duration-300`;
-      setTimeout(() => { toast.classList.add('hidden'); }, 3000);
-    }
+function showToast(message, type = 'success') {
+  const toast = document.getElementById('toast');
+  const msgEl = document.getElementById('toast-message');
+  msgEl.textContent = message;
+  toast.className = `fixed bottom-4 left-1/2 transform -translate-x-1/2 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white px-6 py-3 rounded-xl shadow-lg flex items-center gap-2 transition-all duration-300`;
+  setTimeout(() => { toast.classList.add('hidden'); }, 3000);
+}
 
-    function showHistory() {
-      showPage('history-page');
-      syncHistoryFromSheet_({ silent: true });
-      renderHistory();
-    }
+// =========================
+// HISTORY LOADER FIX (JSONP)
+// =========================
 
-    function filterHistory() { renderHistory(); }
+function loadJSONP(url, callbackName) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    const sep = url.includes('?') ? '&' : '?';
+    script.src = `${url}${sep}callback=${callbackName}&_=${Date.now()}`;
 
-    function renderHistory() {
-      const filterDate = document.getElementById('filter-date').value;
-      const filterCategory = document.getElementById('filter-category').value;
+    window[callbackName] = function (data) {
+      try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; }
+      if (script.parentNode) script.parentNode.removeChild(script);
+      resolve(data);
+    };
 
-      let filtered = [...(allRecords || [])];
+    script.onerror = function () {
+      try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; }
+      if (script.parentNode) script.parentNode.removeChild(script);
+      reject(new Error('JSONP failed'));
+    };
 
-      if (filterDate) {
-        filtered = filtered.filter(r => {
-          const recordDate = new Date(r.date).toISOString().split('T')[0];
-          return recordDate === filterDate;
-        });
+    document.body.appendChild(script);
+  });
+}
+
+async function fetchHistoryJSONP_() {
+  const cb = 'cb_' + Date.now();
+
+  const res = await loadJSONP(
+    `${GOOGLE_SHEET_WEBAPP_URL}?action=list`,
+    cb
+  );
+
+  if (!res || !res.ok) {
+    throw new Error((res && res.error) || 'โหลดประวัติไม่สำเร็จ');
+  }
+
+  return (res.records || []).map(r => ({
+    ...r,
+    __backendId: r.backendId || r.__backendId || r.id || '',
+    items: r.items || r.items_json || '[]'
+  }));
+}
+
+async function showHistory() {
+  showPage('history-page');
+
+  const listEl = document.getElementById('history-list');
+  const noHistory = document.getElementById('no-history');
+
+  listEl.innerHTML = `
+    <div class="bg-white rounded-xl p-4 shadow-md text-center text-gray-500">
+      กำลังโหลด...
+    </div>
+  `;
+  noHistory.classList.add('hidden');
+
+  try {
+    allRecords = await fetchHistoryJSONP_();
+    renderHistory();
+  } catch (err) {
+    console.error('showHistory JSONP error:', err);
+    listEl.innerHTML = `
+      <div class="bg-white rounded-xl p-4 shadow-md text-center text-red-500">
+        โหลดประวัติไม่สำเร็จ
+      </div>
+    `;
+  }
+}
+
+function filterHistory() { renderHistory(); }
+
+function renderHistory() {
+  const filterDate = document.getElementById('filter-date').value;
+  const filterCategory = document.getElementById('filter-category').value;
+
+  let filtered = [...(allRecords || [])];
+
+  if (filterDate) {
+    filtered = filtered.filter(r => {
+      const raw = String(r.date || '').trim();
+
+      // รองรับ yyyy-mm-dd
+      if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+        return raw.slice(0, 10) === filterDate;
       }
 
-      if (filterCategory) filtered = filtered.filter(r => r.category === filterCategory);
-      filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-      const listEl = document.getElementById('history-list');
-      const noHistory = document.getElementById('no-history');
-
-      if (filtered.length === 0) {
-        listEl.innerHTML = '';
-        noHistory.classList.remove('hidden');
-        return;
+      // รองรับ dd/mm/yyyy
+      if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(raw)) {
+        const [dd, mm, yyyy] = raw.split('/');
+        const normalized = `${yyyy}-${String(mm).padStart(2, '0')}-${String(dd).padStart(2, '0')}`;
+        return normalized === filterDate;
       }
 
-      noHistory.classList.add('hidden');
+      const d = new Date(raw);
+      if (!isNaN(d.getTime())) {
+        const normalized = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+        return normalized === filterDate;
+      }
 
-      const colors = { 'หน้าเรือ': 'from-orange-500 to-orange-600', 'อาหารตามสั่ง': 'from-emerald-500 to-emerald-600', 'เด็กเสิร์ฟ': 'from-blue-500 to-blue-600' };
-      const icons = { 'หน้าเรือ': '🚣', 'อาหารตามสั่ง': '🍳', 'เด็กเสิร์ฟ': '🧑‍🍳' };
+      return false;
+    });
+  }
 
-      listEl.innerHTML = filtered.map(record => `
-        <div onclick="showHistoryDetail('${record.__backendId || record.id}')" class="bg-white rounded-xl p-4 shadow-md hover:shadow-lg transition-all cursor-pointer">
-          <div class="flex items-center gap-4">
-            <div class="w-12 h-12 bg-gradient-to-br ${colors[record.category]} rounded-xl flex items-center justify-center text-2xl">
-              ${icons[record.category]}
-            </div>
-            <div class="flex-1">
-              <p class="font-semibold text-gray-800">${tCategory(record.category)}</p>
-              <p class="text-sm text-gray-500">${translations[currentLanguage].staffChecker} ${record.checker_name}</p>
-              <p class="text-sm text-gray-400">${formatFullDate(record.date, currentLanguage)}</p>
-            </div>
-            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-            </svg>
-          </div>
+  if (filterCategory) filtered = filtered.filter(r => r.category === filterCategory);
+
+  filtered.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
+  const listEl = document.getElementById('history-list');
+  const noHistory = document.getElementById('no-history');
+
+  if (filtered.length === 0) {
+    listEl.innerHTML = '';
+    noHistory.classList.remove('hidden');
+    return;
+  }
+
+  noHistory.classList.add('hidden');
+
+  const colors = { 'หน้าเรือ': 'from-orange-500 to-orange-600', 'อาหารตามสั่ง': 'from-emerald-500 to-emerald-600', 'เด็กเสิร์ฟ': 'from-blue-500 to-blue-600' };
+  const icons = { 'หน้าเรือ': '🚣', 'อาหารตามสั่ง': '🍳', 'เด็กเสิร์ฟ': '🧑‍🍳' };
+
+  listEl.innerHTML = filtered.map(record => `
+    <div onclick="showHistoryDetail('${record.__backendId || record.id}')" class="bg-white rounded-xl p-4 shadow-md hover:shadow-lg transition-all cursor-pointer">
+      <div class="flex items-center gap-4">
+        <div class="w-12 h-12 bg-gradient-to-br ${colors[record.category] || 'from-gray-400 to-gray-500'} rounded-xl flex items-center justify-center text-2xl">
+          ${icons[record.category] || '📦'}
         </div>
-      `).join('');
-    }
-
-    function showHistoryDetail(idOrBackendId) {
-      const record = (allRecords || []).find(r => (r.__backendId || r.id) === idOrBackendId);
-      if (!record) return;
-
-      window.__currentDetailRecord = idOrBackendId;
-
-      const items = JSON.parse(record.items || '[]');
-      const previousRecord = getPreviousRecord(record.category, record.date);
-      const t = translations[currentLanguage];
-      const colors = { 'หน้าเรือ': 'from-orange-500 to-orange-600', 'อาหารตามสั่ง': 'from-emerald-500 to-emerald-600', 'เด็กเสิร์ฟ': 'from-blue-500 to-blue-600' };
-
-      const content = document.getElementById('history-detail-content');
-      content.innerHTML = `
-        <div class="bg-gradient-to-r ${colors[record.category]} p-4 text-white">
-          <h3 class="text-xl font-bold mb-2">${tCategory(record.category)}</h3>
-          <p class="text-sm opacity-90">${t.staffChecker} <span class="font-semibold">${record.checker_name}</span></p>
-          <p class="text-sm opacity-90">${t.date} <span class="font-semibold">${formatFullDate(record.date, currentLanguage)}</span></p>
+        <div class="flex-1">
+          <p class="font-semibold text-gray-800">${tCategory(record.category)}</p>
+          <p class="text-sm text-gray-500">${translations[currentLanguage].staffChecker} ${record.checker_name}</p>
+          <p class="text-sm text-gray-400">${formatFullDate(record.date, currentLanguage)}</p>
         </div>
-        <div class="overflow-x-auto">
-          <table class="w-full">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">${t.item}</th>
-                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">${t.quantity}</th>
-                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">${t.unit}</th>
-                ${previousRecord ? `<th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">${t.compared}<br><span class="text-xs font-normal">${formatDate(previousRecord.date, currentLanguage)}</span></th>
-                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">${t.changeLabel}</th>
-                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">${t.changePctLabel}</th>` : ''}
-                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">${t.note}</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-              ${items.map(item => {
-                let comparison = '';
-                let trend = '';
-                if (previousRecord) {
-                  const prevItem = getItemFromRecord(previousRecord, item.name);
-                  if (prevItem) {
-                    const curBase = getComparableQty_(item);
-                    const prevBase = getComparableQty_(prevItem);
-                    const diff = curBase - prevBase;
+        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+      </div>
+    </div>
+  `).join('');
+}
 
-                    if (diff > 0) trend = `<span class="trend-up">⬆ +${fmtQty(diff)}</span>`;
-                    else if (diff < 0) trend = `<span class="trend-down">⬇ ${fmtQty(diff)}</span>`;
-                    else trend = `<span class="trend-neutral">- ${t.noChange}</span>`;
+function showHistoryDetail(idOrBackendId) {
+  const record = (allRecords || []).find(r => (r.__backendId || r.id) === idOrBackendId);
+  if (!record) return;
 
-                    let pctHtml = `<span class="text-gray-400">-</span>`;
-                    if (prevBase > 0) {
-                      const pct = (diff / prevBase) * 100;
-                      const sign = pct > 0 ? "+" : "";
-                      const cls = pct > 0 ? "trend-up" : (pct < 0 ? "trend-down" : "trend-neutral");
-                      pctHtml = `<span class="${cls}">${sign}${pct.toFixed(1)}%</span>`;
-                    } else if (prevBase === 0 && curBase !== 0) {
-                      pctHtml = `<span class="text-xs text-blue-600">${t.noPrevious}</span>`;
-                    }
+  window.__currentDetailRecord = idOrBackendId;
 
-                    comparison = `<td class="px-4 py-3 text-center font-semibold text-gray-600">${fmtQty(getDisplayQty_(prevItem))} ${tUnit(getDisplayUnit_(prevItem))}</td>
-                                  <td class="px-4 py-3 text-center font-semibold">${trend}</td>
-                                  <td class="px-4 py-3 text-center font-semibold">${pctHtml}</td>`;
-                  } else {
-                    comparison = `<td class="px-4 py-3 text-center text-gray-400">-</td>
-                                  <td class="px-4 py-3 text-center"><span class="text-xs text-blue-600">${t.noPrevious}</span></td>
-                                  <td class="px-4 py-3 text-center"><span class="text-gray-400">-</span></td>`;
-                  }
+  let items = [];
+  try {
+    items = JSON.parse(record.items || '[]');
+  } catch (e) {
+    console.error('parse items failed:', e);
+    items = [];
+  }
+
+  const previousRecord = getPreviousRecord(record.category, record.date);
+  const t = translations[currentLanguage];
+  const colors = { 'หน้าเรือ': 'from-orange-500 to-orange-600', 'อาหารตามสั่ง': 'from-emerald-500 to-emerald-600', 'เด็กเสิร์ฟ': 'from-blue-500 to-blue-600' };
+
+  const content = document.getElementById('history-detail-content');
+  content.innerHTML = `
+    <div class="bg-gradient-to-r ${colors[record.category] || 'from-gray-400 to-gray-500'} p-4 text-white">
+      <h3 class="text-xl font-bold mb-2">${tCategory(record.category)}</h3>
+      <p class="text-sm opacity-90">${t.staffChecker} <span class="font-semibold">${record.checker_name}</span></p>
+      <p class="text-sm opacity-90">${t.date} <span class="font-semibold">${formatFullDate(record.date, currentLanguage)}</span></p>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">${t.item}</th>
+            <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">${t.quantity}</th>
+            <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">${t.unit}</th>
+            ${previousRecord ? `<th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">${t.compared}<br><span class="text-xs font-normal">${formatDate(previousRecord.date, currentLanguage)}</span></th>
+            <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">${t.changeLabel}</th>
+            <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">${t.changePctLabel}</th>` : ''}
+            <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">${t.note}</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          ${items.map(item => {
+            let comparison = '';
+            let trend = '';
+            if (previousRecord) {
+              const prevItem = getItemFromRecord(previousRecord, item.name);
+              if (prevItem) {
+                const curBase = getComparableQty_(item);
+                const prevBase = getComparableQty_(prevItem);
+                const diff = curBase - prevBase;
+
+                if (diff > 0) trend = `<span class="trend-up">⬆ +${fmtQty(diff)}</span>`;
+                else if (diff < 0) trend = `<span class="trend-down">⬇ ${fmtQty(diff)}</span>`;
+                else trend = `<span class="trend-neutral">- ${t.noChange}</span>`;
+
+                let pctHtml = `<span class="text-gray-400">-</span>`;
+                if (prevBase > 0) {
+                  const pct = (diff / prevBase) * 100;
+                  const sign = pct > 0 ? "+" : "";
+                  const cls = pct > 0 ? "trend-up" : (pct < 0 ? "trend-down" : "trend-neutral");
+                  pctHtml = `<span class="${cls}">${sign}${pct.toFixed(1)}%</span>`;
+                } else if (prevBase === 0 && curBase !== 0) {
+                  pctHtml = `<span class="text-xs text-blue-600">${t.noPrevious}</span>`;
                 }
 
-                const displayQty = getDisplayQty_(item);
-                const displayUnit = getDisplayUnit_(item);
+                comparison = `<td class="px-4 py-3 text-center font-semibold text-gray-600">${fmtQty(getDisplayQty_(prevItem))} ${tUnit(getDisplayUnit_(prevItem))}</td>
+                              <td class="px-4 py-3 text-center font-semibold">${trend}</td>
+                              <td class="px-4 py-3 text-center font-semibold">${pctHtml}</td>`;
+              } else {
+                comparison = `<td class="px-4 py-3 text-center text-gray-400">-</td>
+                              <td class="px-4 py-3 text-center"><span class="text-xs text-blue-600">${t.noPrevious}</span></td>
+                              <td class="px-4 py-3 text-center"><span class="text-gray-400">-</span></td>`;
+              }
+            }
 
-                return `
-                  <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-3 font-medium text-gray-800">${tItem(item.name)}</td>
-                    <td class="px-4 py-3 text-center font-semibold ${Number(displayQty || 0) > 0 ? 'text-green-600' : 'text-red-500'}">${fmtQty(displayQty)}</td>
-                    <td class="px-4 py-3 text-center text-gray-600">${tUnit(displayUnit)}</td>
-                    ${comparison}
-                    <td class="px-4 py-3 text-gray-500">${item.note || '-'}</td>
-                  </tr>
-                `;
-              }).join('')}
-            </tbody>
-          </table>
-        </div>
-      `;
+            const displayQty = getDisplayQty_(item);
+            const displayUnit = getDisplayUnit_(item);
 
-      showPage('history-detail-page');
-    }
+            return `
+              <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 font-medium text-gray-800">${tItem(item.name)}</td>
+                <td class="px-4 py-3 text-center font-semibold ${Number(displayQty || 0) > 0 ? 'text-green-600' : 'text-red-500'}">${fmtQty(displayQty)}</td>
+                <td class="px-4 py-3 text-center text-gray-600">${tUnit(displayUnit)}</td>
+                ${comparison}
+                <td class="px-4 py-3 text-gray-500">${item.note || '-'}</td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
 
-    init();
-  </script>
+  showPage('history-detail-page');
+}
+
+init();
 
   <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9cc1f7c8006f45ab',t:'MTc3MDc5MzIxMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
