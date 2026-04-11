@@ -1175,9 +1175,6 @@ function getDisplayQty_(it){
       document.getElementById('current-date').textContent = formatDate(today, currentLanguage);
       document.getElementById('filter-date').valueAsDate = today;
 
-      const result = (window.dataSdk && typeof window.dataSdk.init==="function" ? await window.dataSdk.init(dataHandler) : {isOk:false});
-      if (!result.isOk) console.error('Failed to initialize data SDK');
-
       startSheetPolling_();
 
       if (window.elementSdk) {
